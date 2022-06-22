@@ -2,3 +2,55 @@
 # Please follow the best practices: 
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
 # in particular regarding the standardized folder structure mentioned there. 
+
+## some variables that might be nice to define at the top of the document -> put in config file
+#reference
+#mutations
+#clones
+#outdir
+#fold_coverage
+#proportions (array) -> pop_size is length of array
+
+#rule all:
+
+#mutate reference sequence
+rule mutate:
+  input:
+    "{/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/mutator.py}",
+	  "{config[reference]}",
+	  "{mutations}",
+	  "{clones}",
+	  "{out_prefix}"
+  output:
+	  "{outdir}/sample_sequences/{out_prefix}_(ii).fasta"
+  shell:
+	  "python {input}"
+	
+
+#simulate reads from mutated sequences
+##needs to be altered so it can be used for different proportions and different population sizes
+rule make_samples:
+  input:
+	  "{outdir}/sample_sequences/{sample_seq}.fasta"
+  output:
+	  "{outdir}/sample_reads/{sample_seq}_1.fq"
+	  "{outdir}/sample_reads/{sample_seq}_2.fq"
+  shell:
+    "art_illumina -sam -i {input} -p -l 150 -ss HS25 -f {fold_coverage} -m 200 -s 10 -o {sample_seq}_"
+
+#group reads such that a certain population size is simulated 
+rule group_reads1:
+  input:
+	  "{outdir}/sample_reads/{sample_read}_{ii}_1.fq"
+	
+
+
+rule bwa_map:
+  input:
+	  "{reference}"
+	  "{outdir}/samples/{merged_reads}_1.fq"
+	  "{outdir}/samples/{merged_reads}_2.fq"
+  output:
+	  "{outdir}/alignment/{merged_reads}.srt.bam"
+  shell:
+	  "bwa mem {input} | samtools view -1 - | samtools sort - > {output}"
