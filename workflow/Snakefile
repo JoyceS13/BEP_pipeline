@@ -29,7 +29,7 @@ rule mutate:
 	  	mutations,
 	  	popsize,
  	output:
-	  	expand("{outdir}/sample{ii}/seq_{jj}.fasta", ii = repeat_ar, jj = pop_size_ar)
+	  	expand("{outdir}/sample{ii}/seq_{jj}.fasta", jj = pop_size_ar)
 	params:
 		out_prefix = "seq"
   	shell:
@@ -127,6 +127,6 @@ rule msa2vcf:
 	output:
 		"{outdir}/sample{ii}/vcf/true_vcf_seq{jj}.vcf"
 	shell:
-		"snp-sites
+		"snp-sites -v -o {output} {input}
 
 
