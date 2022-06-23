@@ -28,9 +28,9 @@ rule mutate:
 	  "{reference}",
 	  "{mutations}",
 	  "{pop_size}",
-	  "{name}"
+	  "seq"
   output:
-	  expand("{outdir}/sample{ii}/{prefix}_{jj}.fasta", ii = repeat_ar, jj = pop_size_ar)
+	  expand("{outdir}/sample{ii}/seq_{jj}.fasta", ii = repeat_ar, jj = pop_size_ar)
   shell:
 	  "python {input}"
 	
@@ -39,32 +39,93 @@ rule mutate:
 ##needs to be altered so it can be used for different proportions and different population sizes
 rule make_samples:
   input:
-	  expand("{outdir}/sample{ii}/{prefix}_{jj}.fasta", jj = pop_size_ar)
+	  expand("{outdir}/sample{ii}/seq_{jj}.fasta", jj = pop_size_ar)
   output:
-	  temp(expand("{outdir}/sample{ii}/{prefix}_{jj}_{read_end}.fq", jj = pop_size_ar, read_end = [1,2]))
+	  temp(expand("{outdir}/sample{ii}/seq_{jj}_{read_end}.fq", jj = pop_size_ar, read_end = [1,2]))
 	params:
 		out_prefix = {prefix}_{jj}_
+		f_cov = f_cov
   run:
 		for ii in pop_size_ar:
-    	shell("art_illumina -sam -i {input[ii]} -p -l 150 -ss HS25 -f {f_cov[ii]} -m 200 -s 10 -o {params.out_prefix}")
+    	shell("art_illumina -sam -i {input[ii]} -p -l 150 -ss HS25 -f {params.f_cov[ii]} -m 200 -s 10 -o {params.out_prefix}")
 
 #group reads such that a certain population size is simulated 
 rule group_reads:
   input:
-	  reads1 = "{outdir}/sample{ii}/{prefix}_{jj}_1.fq", jj = pop_size_ar
-		reads2 = "{outdir}/sample{ii}/{prefix}_{jj}_2.fq", jj = pop_size_ar
+	  reads1 = "{outdir}/sample{ii}/seq_{jj}_1.fq", jj = pop_size_ar
+		reads2 = "{outdir}/sample{ii}/seq_{jj}_2.fq", jj = pop_size_ar
 	output:
-		expand("{outdir}/sample{ii}/{prefix}_reads{read_end}.fq, read_end = [1,2])
+		expand("{outdir}/sample{ii}/reads{read_end}.fq, read_end = [1,2])
 	shell:
-		cat input.reads1 > {prefix}_reads1.fq
-		cat input.reads2 > {prefix}_reads2.fq
+		cat input.reads1 > reads1.fq
+		cat input.reads2 > reads2.fq
 		
 
 rule bwa_map:
   input:
 	  "{reference}"
-	  expand("{outdir}/sample{ii}/{prefix}_reads{read_end}.fq, read_end = [1,2])
+	  expand("{outdir}/sample{ii}/reads{read_end}.fq, read_end = [1,2])
   output:
-	  "{outdir}/sample{ii}/{prefix}.srt.bam"
+	  "{outdir}/sample{ii}/aln.srt.bam"
   shell:
 	  "bwa mem {input} | samtools view -1 - | samtools sort - > {output}"
+
+rule bcftools_call:
+	input: 
+		reference,
+		"{outdir}/sample{ii}/aln.sort.bam"
+	output:
+		"{outdir}/sample{ii}/vcf/bcftools.vcf"
+	params:
+		ploidy = pop_size
+	shell:
+		"bcftools mpileup -f {input} | bcftools call --ploidy params.ploidy -m -o {output}"
+
+rule bcftools_limit:
+	input: 
+		reference,
+		"{outdir}/sample{ii}/aln.sort.bam"
+	output:
+		"{outdir}/sample{ii}/vcf/bcftools_limit.vcf"
+	params:
+		ploidy = 5
+	shell:
+		"bcftools mpileup -f {input} | bcftools call --ploidy params.ploidy -m -o {output}"
+
+rule varscan_call:
+	input: 
+		reference,
+		"{outdir}/sample{ii}/aln.sort.bam"
+	output:
+		"{outdir}/sample{ii}/vcf/varscan.vcf"
+
+	shell:
+		"samtools mpileup -f {input} | varscan mpileup2snp - > {output} --output-vcf 1"
+
+rule freebayes_call:
+	input: 
+		reference,
+		"{outdir}/sample{ii}/aln.sort.bam"
+	output:
+		"{outdir}/sample{ii}/vcf/freebayes.vcf"
+	shell:
+		freebayes -f {input[0]} -p 1 {input[1]} > {output}
+	
+rule seq2msa:
+	input:
+		reference,
+		"{outdir}/sample{ii}/seq{jj}.fasta"
+	output:
+		temp("{outdir}/sample{ii}/msa/msa_seq{jj}.msa")
+	shell:
+		clustalw -infile {input} -outfile {output}
+
+rule msa2vcf:
+	input: 
+		"{outdir}/sample{ii}/msa/msa_seq{jj}.msa"
+	output:
+		"{outdir}/sample{ii}/vcf/true_vcf_seq{jj}.vcf"
+	shell:
+		"snp-sites
+
+
