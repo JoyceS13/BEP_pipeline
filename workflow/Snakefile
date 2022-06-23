@@ -4,7 +4,7 @@
 # in particular regarding the standardized folder structure mentioned there. 
 
 ## some variables that might be nice to define at the top of the document -> put in config file
-#reference
+#reference = 
 #mutations
 #clones
 #outdir
