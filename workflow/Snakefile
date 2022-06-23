@@ -4,20 +4,21 @@
 # in particular regarding the standardized folder structure mentioned there. 
 
 ## some variables that might be nice to define at the top of the document -> put in config file
-#reference = 
-#mutations
-#clones
-#outdir
-#fold_coverage
-#proportions (array) -> pop_size is length of array
+reference = "IMBvariant/reference/chromosomes/CEN.PK113-7D_chr01_pilon.fa"
+name = "chr1"
+mutations = 200
+repeats = 10
+outdir = "output"
+f_cov = [20,20]
+pop_size = len(f_cov)
 
 #rule all:
 
 #mutate reference sequence
 rule mutate:
   input:
-    "{/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/mutator.py}",
-	  "{config[reference]}",
+    "{scripts/mutator.py}",
+	  "{reference}",
 	  "{mutations}",
 	  "{clones}",
 	  "{out_prefix}"
