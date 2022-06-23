@@ -32,6 +32,8 @@ rule mutate:
 	  	expand("{outdir}/sample{ii}/seq_{jj}.fasta", jj = pop_size_ar)
 	params:
 		out_prefix = "seq"
+	conda:
+		"envs/mutate_env.yaml"
   	shell:
 	  	"python {input} -o params.out_prefix"
 	
@@ -46,6 +48,8 @@ rule make_samples:
 	params:
 		out_prefix = {prefix}_{jj}_,
 		f_cov = f_cov
+	conda:
+		"envs/art.yaml"
   	run:
 		for ii in pop_size_ar:
     			shell("art_illumina -sam -i {input[ii]} -p -l 150 -ss HS25 -f {params.f_cov[ii]} -m 200 -s 10 -o {params.out_prefix}")
@@ -68,6 +72,8 @@ rule bwa_map:
 	  	expand("{outdir}/sample{ii}/reads{read_end}.fq, read_end = [1,2])
   	output:
 	  	"{outdir}/sample{ii}/aln.srt.bam"
+	conda:
+		"envs/bwa_map_env.yaml"
   	shell:
 	  	"bwa mem {input} | samtools view -1 - | samtools sort - > {output}"
 
@@ -79,6 +85,8 @@ rule bcftools_call:
 		"{outdir}/sample{ii}/vcf/bcftools.vcf"
 	params:
 		ploidy = pop_size
+	conda:
+		"envs/bcftools.yaml"
 	shell:
 		"bcftools mpileup -f {input} | bcftools call --ploidy params.ploidy -m -o {output}"
 
@@ -90,6 +98,8 @@ rule bcftools_limit:
 		"{outdir}/sample{ii}/vcf/bcftools_limit.vcf"
 	params:
 		ploidy = 5
+	conda:
+		"envs/bcftools.yaml"
 	shell:
 		"bcftools mpileup -f {input} | bcftools call --ploidy params.ploidy -m -o {output}"
 
@@ -99,7 +109,8 @@ rule varscan_call:
 		"{outdir}/sample{ii}/aln.sort.bam"
 	output:
 		"{outdir}/sample{ii}/vcf/varscan.vcf"
-
+	conda:
+		"envs/varscan.yaml"
 	shell:
 		"samtools mpileup -f {input} | varscan mpileup2snp - > {output} --output-vcf 1"
 
@@ -109,6 +120,8 @@ rule freebayes_call:
 		"{outdir}/sample{ii}/aln.sort.bam"
 	output:
 		"{outdir}/sample{ii}/vcf/freebayes.vcf"
+	conda:
+		"envs/freebayes.yaml"
 	shell:
 		"freebayes -f {input[0]} -p 1 {input[1]} > {output}"
 	
@@ -118,6 +131,8 @@ rule seq2msa:
 		"{outdir}/sample{ii}/seq{jj}.fasta"
 	output:
 		temp("{outdir}/sample{ii}/msa/msa_seq{jj}.msa")
+	conda:
+		"envs/snp-sites.yaml"
 	shell:
 		"cat {input} > {output}"
 
