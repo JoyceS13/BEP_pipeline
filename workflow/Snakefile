@@ -23,52 +23,53 @@ prefix = f"{name}_{mutations}mut_{pop_size}_pop"
 
 #mutate reference sequence
 rule mutate:
-  input:
-    "{scripts/mutator.py}",
-	  "{reference}",
-	  "{mutations}",
-	  "{pop_size}",
-	  "seq"
-  output:
-	  expand("{outdir}/sample{ii}/seq_{jj}.fasta", ii = repeat_ar, jj = pop_size_ar)
-  shell:
-	  "python {input}"
+	input:
+		"{scripts/mutator.py}",
+	  	reference,
+	  	mutations,
+	  	popsize,
+ 	output:
+	  	expand("{outdir}/sample{ii}/seq_{jj}.fasta", ii = repeat_ar, jj = pop_size_ar)
+	params:
+		out_prefix = "seq"
+  	shell:
+	  	"python {input} -o params.out_prefix"
 	
 
 #simulate reads from mutated sequences
 ##needs to be altered so it can be used for different proportions and different population sizes
 rule make_samples:
-  input:
-	  expand("{outdir}/sample{ii}/seq_{jj}.fasta", jj = pop_size_ar)
-  output:
-	  temp(expand("{outdir}/sample{ii}/seq_{jj}_{read_end}.fq", jj = pop_size_ar, read_end = [1,2]))
+  	input:
+	  	expand("{outdir}/sample{ii}/seq_{jj}.fasta", jj = pop_size_ar)
+  	output:
+	  	temp(expand("{outdir}/sample{ii}/seq_{jj}_{read_end}.fq", jj = pop_size_ar, read_end = [1,2]))
 	params:
-		out_prefix = {prefix}_{jj}_
+		out_prefix = {prefix}_{jj}_,
 		f_cov = f_cov
-  run:
+  	run:
 		for ii in pop_size_ar:
-    	shell("art_illumina -sam -i {input[ii]} -p -l 150 -ss HS25 -f {params.f_cov[ii]} -m 200 -s 10 -o {params.out_prefix}")
+    			shell("art_illumina -sam -i {input[ii]} -p -l 150 -ss HS25 -f {params.f_cov[ii]} -m 200 -s 10 -o {params.out_prefix}")
 
 #group reads such that a certain population size is simulated 
 rule group_reads:
-  input:
-	  reads1 = "{outdir}/sample{ii}/seq_{jj}_1.fq", jj = pop_size_ar
+  	input:
+	  	reads1 = "{outdir}/sample{ii}/seq_{jj}_1.fq", jj = pop_size_ar,
 		reads2 = "{outdir}/sample{ii}/seq_{jj}_2.fq", jj = pop_size_ar
 	output:
 		expand("{outdir}/sample{ii}/reads{read_end}.fq, read_end = [1,2])
 	shell:
-		cat input.reads1 > reads1.fq
-		cat input.reads2 > reads2.fq
+		"cat input.reads1 > reads1.fq"
+		"cat input.reads2 > reads2.fq"
 		
 
 rule bwa_map:
-  input:
-	  "{reference}"
-	  expand("{outdir}/sample{ii}/reads{read_end}.fq, read_end = [1,2])
-  output:
-	  "{outdir}/sample{ii}/aln.srt.bam"
-  shell:
-	  "bwa mem {input} | samtools view -1 - | samtools sort - > {output}"
+  	input:
+	  	reference,
+	  	expand("{outdir}/sample{ii}/reads{read_end}.fq, read_end = [1,2])
+  	output:
+	  	"{outdir}/sample{ii}/aln.srt.bam"
+  	shell:
+	  	"bwa mem {input} | samtools view -1 - | samtools sort - > {output}"
 
 rule bcftools_call:
 	input: 
@@ -109,7 +110,7 @@ rule freebayes_call:
 	output:
 		"{outdir}/sample{ii}/vcf/freebayes.vcf"
 	shell:
-		freebayes -f {input[0]} -p 1 {input[1]} > {output}
+		"freebayes -f {input[0]} -p 1 {input[1]} > {output}"
 	
 rule seq2msa:
 	input:
@@ -118,7 +119,7 @@ rule seq2msa:
 	output:
 		temp("{outdir}/sample{ii}/msa/msa_seq{jj}.msa")
 	shell:
-		clustalw -infile {input} -outfile {output}
+		"cat {input} > {output}"
 
 rule msa2vcf:
 	input: 
