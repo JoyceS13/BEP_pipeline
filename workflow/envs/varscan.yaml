@@ -1,0 +1,6 @@
+channels: 
+  -bioconda
+dependencies:
+  -varscan = 2.4.3
+  -samtools = 1.15.1
+  
