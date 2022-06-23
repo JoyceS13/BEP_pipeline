@@ -4,13 +4,20 @@
 # in particular regarding the standardized folder structure mentioned there. 
 
 ## some variables that might be nice to define at the top of the document -> put in config file
+#general variables, maybe move to config file
 reference = "IMBvariant/reference/chromosomes/CEN.PK113-7D_chr01_pilon.fa"
 name = "chr1"
 mutations = 200
 repeats = 10
-outdir = "output"
 f_cov = [20,20]
+
+#dependent global variables
+repeat_ar = np.linspace(0,repeats-1,repeats)
+props = "_".join(f_cov)
 pop_size = len(f_cov)
+pop_size_ar = np.linspace(0,pop_size-1,pop_size)
+outdir = f"output/{name}_{mutations}mut_{props}fcov"
+prefix = f"{name}_{mutations}mut_{pop_size}_pop"
 
 #rule all:
 
@@ -20,10 +27,10 @@ rule mutate:
     "{scripts/mutator.py}",
 	  "{reference}",
 	  "{mutations}",
-	  "{clones}",
-	  "{out_prefix}"
+	  "{pop_size}",
+	  "{name}"
   output:
-	  "{outdir}/sample_sequences/{out_prefix}_(ii).fasta"
+	  expand("{outdir}/sample{ii}/{prefix}_{jj}.fasta", ii = repeat_ar, jj = pop_size_ar)
   shell:
 	  "python {input}"
 	
@@ -32,26 +39,32 @@ rule mutate:
 ##needs to be altered so it can be used for different proportions and different population sizes
 rule make_samples:
   input:
-	  "{outdir}/sample_sequences/{sample_seq}.fasta"
+	  expand("{outdir}/sample{ii}/{prefix}_{jj}.fasta", jj = pop_size_ar)
   output:
-	  "{outdir}/sample_reads/{sample_seq}_1.fq"
-	  "{outdir}/sample_reads/{sample_seq}_2.fq"
-  shell:
-    "art_illumina -sam -i {input} -p -l 150 -ss HS25 -f {fold_coverage} -m 200 -s 10 -o {sample_seq}_"
+	  temp(expand("{outdir}/sample{ii}/{prefix}_{jj}_{read_end}.fq", jj = pop_size_ar, read_end = [1,2]))
+	params:
+		out_prefix = {prefix}_{jj}_
+  run:
+		for ii in pop_size_ar:
+    	shell("art_illumina -sam -i {input[ii]} -p -l 150 -ss HS25 -f {f_cov[ii]} -m 200 -s 10 -o {params.out_prefix}")
 
 #group reads such that a certain population size is simulated 
-rule group_reads1:
+rule group_reads:
   input:
-	  "{outdir}/sample_reads/{sample_read}_{ii}_1.fq"
-	
-
+	  reads1 = "{outdir}/sample{ii}/{prefix}_{jj}_1.fq", jj = pop_size_ar
+		reads2 = "{outdir}/sample{ii}/{prefix}_{jj}_2.fq", jj = pop_size_ar
+	output:
+		expand("{outdir}/sample{ii}/{prefix}_reads{read_end}.fq, read_end = [1,2])
+	shell:
+		cat input.reads1 > {prefix}_reads1.fq
+		cat input.reads2 > {prefix}_reads2.fq
+		
 
 rule bwa_map:
   input:
 	  "{reference}"
-	  "{outdir}/samples/{merged_reads}_1.fq"
-	  "{outdir}/samples/{merged_reads}_2.fq"
+	  expand("{outdir}/sample{ii}/{prefix}_reads{read_end}.fq, read_end = [1,2])
   output:
-	  "{outdir}/alignment/{merged_reads}.srt.bam"
+	  "{outdir}/sample{ii}/{prefix}.srt.bam"
   shell:
 	  "bwa mem {input} | samtools view -1 - | samtools sort - > {output}"
