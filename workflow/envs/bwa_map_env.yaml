@@ -1,1 +1,7 @@
 ## dependencies bwa_map rule
+channels:
+        -bioconda
+dependencies: 
+        - bwa = 0.1.17
+        -samtools = 1.15.1
+ 
