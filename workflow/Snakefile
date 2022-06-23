@@ -5,11 +5,11 @@
 
 ## some variables that might be nice to define at the top of the document -> put in config file
 #general variables, maybe move to config file
-reference = "IMBvariant/reference/chromosomes/CEN.PK113-7D_chr01_pilon.fa"
-name = "chr1"
-mutations = 200
-repeats = 10
-f_cov = [20,20]
+reference = config["reference"]
+name = config["name"]
+mutations = config["mutations"]
+repeats = config["repeats"]
+f_cov = config["f_cov"]
 
 #dependent global variables
 repeat_ar = np.linspace(0,repeats-1,repeats)
