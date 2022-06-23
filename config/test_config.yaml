@@ -1,0 +1,5 @@
+reference: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/IMBvariant/reference/chromosomes/CEN.PK113-7D_chr01_pilon.fa"
+name: "chr1"
+mutations: 200
+repeats: 10
+f_cov: [20,20]
