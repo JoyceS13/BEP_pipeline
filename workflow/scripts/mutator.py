@@ -26,7 +26,7 @@ def mutator(reference, mutations, clones, file_name = '' ):
 
     #prepare output file
     if file_name == '':
-        file_name = ref.id
+        file_name = f'{ref.id}_{mutations}mut'
     
     #mutates and adds clone to file
     for ii in range(clones):
@@ -43,7 +43,7 @@ def mutator(reference, mutations, clones, file_name = '' ):
             nucl.remove(clone[idx]) #removes read nucleotide from potential nucleotide list
             clone[idx] = rand.choice(nucl) #assigns a new nucleotide that is different from the old nucleotide
         clone = "".join(clone)   
-        f = open(file_name+"_{}mut_".format(mutations)+str(ii)+'.fasta','w')
+        f = open(file_name+'_'+str(ii)+'.fasta','w')
         f.write('>{}_{}mut_clone_{}\n{}\n'.format(ref_id,mutations,ii,clone))
         f.close()
                

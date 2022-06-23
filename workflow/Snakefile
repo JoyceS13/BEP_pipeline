@@ -3,6 +3,10 @@
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
 # in particular regarding the standardized folder structure mentioned there. 
 
+import numpy as np
+
+configfile: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/test_config.yaml"
+
 ## some variables that might be nice to define at the top of the document -> put in config file
 #general variables, maybe move to config file
 reference = config["reference"]
@@ -12,10 +16,10 @@ repeats = config["repeats"]
 f_cov = config["f_cov"]
 
 #dependent global variables
-repeat_ar = np.linspace(0,repeats-1,repeats)
-props = "_".join(f_cov)
+repeat_ar = range(0,repeats)
+props = "_".join(str(cov) for cov in f_cov)
 pop_size = len(f_cov)
-pop_size_ar = np.linspace(0,pop_size-1,pop_size)
+pop_size_ar = range(0,pop_size)
 outdir = f"output/{name}_{mutations}mut_{props}fcov"
 prefix = f"{name}_{mutations}mut_{pop_size}_pop"
 
@@ -24,41 +28,39 @@ prefix = f"{name}_{mutations}mut_{pop_size}_pop"
 #mutate reference sequence
 rule mutate:
 	input:
-		"{scripts/mutator.py}",
-	  	reference,
-	  	mutations,
-	  	popsize,
- 	output:
+		"/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/workflow/scripts/mutator.py",
+		reference
+	output:
 	  	expand("{{outdir}}/sample{{ii}}/seq_{jj}.fasta", jj = pop_size_ar)
 	params:
-		out_prefix = "seq"
+		out_prefix = "seq",
+		mutations = mutations,
+		pop_size = pop_size
 	conda:
 		"envs/mutate_env.yaml"
-  	shell:
-	  	"python {input} -o params.out_prefix"
+	shell:
+	  	"python {input} params.mutations params.pop_size -o params.out_prefix"
 	
 
 #simulate reads from mutated sequences
 ##needs to be altered so it can be used for different proportions and different population sizes
 rule make_samples:
-  	input:
-	  	expand("{{outdir}}/sample{{ii}}/seq_{jj}.fasta", jj = pop_size_ar)
-  	output:
-	  	temp(expand("{{outdir}}/sample{{ii}}/seq_{jj}_{read_end}.fq", jj = pop_size_ar, read_end = [1,2]))
+	input:
+		expand("{{outdir}}/sample{{ii}}/seq_{jj}.fasta", jj = pop_size_ar)
+	output:
+		temp(expand("{{outdir}}/sample{{ii}}/seq_{jj}_{read_end}.fq", jj = pop_size_ar, read_end = [1,2]))
 	params:
-		out_prefix = {prefix}_{jj}_,
+		out_prefix =expand("seq_{jj}_",jj=pop_size_ar) ,
 		f_cov = f_cov
-	conda:
-		"envs/art.yaml"
-  	run:
+	run:
 		for ii in pop_size_ar:
-    			shell("art_illumina -sam -i {input[ii]} -p -l 150 -ss HS25 -f {params.f_cov[ii]} -m 200 -s 10 -o {params.out_prefix}")
+			shell("art_illumina -sam -i {input[ii]} -p -l 150 -ss HS25 -f {params.f_cov[ii]} -m 200 -s 10 -o {params.out_prefix}")
 
 #group reads such that a certain population size is simulated 
 rule group_reads:
   	input:
-	  	reads1 = "{outdir}/sample{ii}/seq_{jj}_1.fq", jj = pop_size_ar,
-		reads2 = "{outdir}/sample{ii}/seq_{jj}_2.fq", jj = pop_size_ar
+	  	reads1 = expand("{{outdir}}/sample{{ii}}/seq_{jj}_1.fq", jj = pop_size_ar),
+		reads2 = expand("{{outdir}}/sample{{ii}}/seq_{jj}_2.fq", jj = pop_size_ar)
 	output:
 		expand("{{outdir}}/sample{{ii}}/reads{read_end}.fq", read_end = [1,2])
 	shell:
@@ -74,13 +76,13 @@ rule bwa_map:
 	  	"{outdir}/sample{ii}/aln.srt.bam"
 	conda:
 		"envs/bwa_map_env.yaml"
-  	shell:
+	shell:
 	  	"bwa mem {input} | samtools view -1 - | samtools sort - > {output}"
 
 rule bcftools_call:
 	input: 
 		reference,
-		"{outdir}/sample{ii}/aln.sort.bam"
+		"{outdir}/sample{ii}/aln.srt.bam"
 	output:
 		"{outdir}/sample{ii}/vcf/bcftools.vcf"
 	params:
@@ -93,7 +95,7 @@ rule bcftools_call:
 rule bcftools_limit:
 	input: 
 		reference,
-		"{outdir}/sample{ii}/aln.sort.bam"
+		"{outdir}/sample{ii}/aln.srt.bam"
 	output:
 		"{outdir}/sample{ii}/vcf/bcftools_limit.vcf"
 	params:
@@ -106,7 +108,7 @@ rule bcftools_limit:
 rule varscan_call:
 	input: 
 		reference,
-		"{outdir}/sample{ii}/aln.sort.bam"
+		"{outdir}/sample{ii}/aln.srt.bam"
 	output:
 		"{outdir}/sample{ii}/vcf/varscan.vcf"
 	conda:
@@ -117,7 +119,7 @@ rule varscan_call:
 rule freebayes_call:
 	input: 
 		reference,
-		"{outdir}/sample{ii}/aln.sort.bam"
+		"{outdir}/sample{ii}/aln.srt.bam"
 	output:
 		"{outdir}/sample{ii}/vcf/freebayes.vcf"
 	conda:
