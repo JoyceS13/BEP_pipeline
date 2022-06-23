@@ -29,7 +29,7 @@ rule mutate:
 	  	mutations,
 	  	popsize,
  	output:
-	  	expand("{outdir}/sample{ii}/seq_{jj}.fasta", jj = pop_size_ar)
+	  	expand("{{outdir}}/sample{{ii}}/seq_{jj}.fasta", jj = pop_size_ar)
 	params:
 		out_prefix = "seq"
 	conda:
@@ -42,9 +42,9 @@ rule mutate:
 ##needs to be altered so it can be used for different proportions and different population sizes
 rule make_samples:
   	input:
-	  	expand("{outdir}/sample{ii}/seq_{jj}.fasta", jj = pop_size_ar)
+	  	expand("{{outdir}}/sample{{ii}}/seq_{jj}.fasta", jj = pop_size_ar)
   	output:
-	  	temp(expand("{outdir}/sample{ii}/seq_{jj}_{read_end}.fq", jj = pop_size_ar, read_end = [1,2]))
+	  	temp(expand("{{outdir}}/sample{{ii}}/seq_{jj}_{read_end}.fq", jj = pop_size_ar, read_end = [1,2]))
 	params:
 		out_prefix = {prefix}_{jj}_,
 		f_cov = f_cov
@@ -60,7 +60,7 @@ rule group_reads:
 	  	reads1 = "{outdir}/sample{ii}/seq_{jj}_1.fq", jj = pop_size_ar,
 		reads2 = "{outdir}/sample{ii}/seq_{jj}_2.fq", jj = pop_size_ar
 	output:
-		expand("{outdir}/sample{ii}/reads{read_end}.fq", read_end = [1,2])
+		expand("{{outdir}}/sample{{ii}}/reads{read_end}.fq", read_end = [1,2])
 	shell:
 		"cat input.reads1 > reads1.fq"
 		"cat input.reads2 > reads2.fq"
@@ -69,7 +69,7 @@ rule group_reads:
 rule bwa_map:
   	input:
 	  	reference,
-	  	expand("{outdir}/sample{ii}/reads{read_end}.fq", read_end = [1,2])
+	  	expand("{{outdir}}/sample{{ii}}/reads{read_end}.fq", read_end = [1,2])
   	output:
 	  	"{outdir}/sample{ii}/aln.srt.bam"
 	conda:
