@@ -1,5 +1,5 @@
 channels:
         -conda-forge
 dependencies:
-        -biopython
-        -argparse
+        -biopython = 1.79
+        -argparse = 1.4.0
