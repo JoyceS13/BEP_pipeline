@@ -1,0 +1,6 @@
+channels:
+	-bioconda
+dependencies:
+  -bgzip = 0.4.0
+  -tabix = 0.2.6
+	-octopus = 0.7.4
