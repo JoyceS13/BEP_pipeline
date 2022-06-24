@@ -95,7 +95,7 @@ rule bcftools_call:
 	conda:
 		"envs/bcftools.yaml"
 	shell:
-		"bcftools mpileup -f {input} | bcftools call --ploidy params.ploidy -m -o {output}"
+		"samtools mpileup -uf {input} | bcftools call --ploidy params.ploidy -m -o {output}"
 
 rule bcftools_limit:
 	input: 
@@ -108,7 +108,7 @@ rule bcftools_limit:
 	conda:
 		"envs/bcftools.yaml"
 	shell:
-		"bcftools mpileup -f {input} | bcftools call --ploidy params.ploidy -m -o {output}"
+		"samtools mpileup -uf {input} | bcftools call --ploidy params.ploidy -m -o {output}"
 		
 rule gatk_call:
 	input: 
