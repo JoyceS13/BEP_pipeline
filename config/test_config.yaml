@@ -4,3 +4,4 @@ mutations: 200
 repeats: 10
 f_cov: [20,20]
 working_dir: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung"
+rename_file: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP-pipeline/config/rename_chr.txt"
