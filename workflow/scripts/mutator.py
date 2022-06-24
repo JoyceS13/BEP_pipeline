@@ -7,9 +7,9 @@ Created on Thu Jun 16 11:21:04 2022
 from Bio import SeqIO
 import random as rand
 import argparse
-import sys
+import os
 
-def mutator(reference, mutations, clones, file_name = '' ):
+def mutator(reference, mutations, clones, file_name = '' , out_dir):
 ## mutator introduces a {mutations} number of mutations to a {clones} number of clones from a reference sequence
     #reference: Fasta file containing reference sequence
     #mutations: Integer with the number of mutations that need to be introduced
@@ -43,10 +43,10 @@ def mutator(reference, mutations, clones, file_name = '' ):
             nucl.remove(clone[idx]) #removes read nucleotide from potential nucleotide list
             clone[idx] = rand.choice(nucl) #assigns a new nucleotide that is different from the old nucleotide
         clone = "".join(clone)   
-        f = open(file_name+'_'+str(ii)+'.fasta','w')
+        f = open(os.path.join(out_dir,file_name+'_'+str(ii)+'.fasta','w'))
         f.write('>{}_{}mut_clone_{}\n{}\n'.format(ref_id,mutations,ii,clone))
         f.close()
-               
+              
     similarity = 1 - mutations/len(ref_seq)
     print('The similarity of the clones to the reference is ',similarity)
     
@@ -61,20 +61,24 @@ if __name__ == '__main__':
                     help='number of clones to be produced')
     ap.add_argument('-o','--outfile', nargs='?', required=False, default = '', type = str, \
                         help = 'prefix/name of out file' )
+    ap.add_argument('-d','--directory', nargs='?', required=False, default = '', type = str, \
+                        help = 'path to output directory' )
     #if there are snakemake variables, use those, otherwise get arguments from command line
     try:
         in_file = snakemake.input[0]
         mutations = snakemake.params["mutations"]
         clones = snakemake.params["pop_size"]
         outfile = snakemake.params["out_prefix"]
+        out_dir = snakemake.params["out_dir"]
     except:
         args = vars(ap.parse_args())
         in_file = args['in_file']
         mutations = args['mutations']
         clones = args['clones']
         outfile = args['outfile']
+        out_dir = args['directory']
     
-    mutator(in_file, mutations, clones, outfile)
+    mutator(in_file, mutations, clones, outfile,out_dir)
     
     
             
