@@ -110,6 +110,18 @@ rule bcftools_limit:
 	shell:
 		"samtools mpileup -uf {input} | bcftools call --ploidy params.ploidy -m -o {output}"
 		
+rule octopus_call:
+	input: 
+		reference,
+		"{outdir}/sample{ii}/aln.srt.bam",
+		rename_file = rename_file
+	output:
+		"{outdir}/sample{ii}/vcf/octopus.vcf"
+	conda:
+		"envs/octopus.yaml"
+	shell:
+		"octopus -R {input[0]} -I {input[1]} -C polyclone | bgzip -c - | tabix -p vcf - | bcftools annotate --rename-chrs {input.rename_file} - > {output}"
+		
 rule gatk_call:
 	input: 
 		reference,
@@ -126,7 +138,8 @@ rule gatk_call:
 rule varscan_call:
 	input: 
 		reference,
-		"{outdir}/sample{ii}/aln.srt.bam"
+		"{outdir}/sample{ii}/aln.srt.bam",
+		rename_file = rename_file
 	output:
 		temp("{outdir}/sample{ii}/vcf/varscan_temp.vcf")
 	conda:
@@ -137,7 +150,8 @@ rule varscan_call:
 rule freebayes_call:
 	input: 
 		reference,
-		"{outdir}/sample{ii}/aln.srt.bam"
+		"{outdir}/sample{ii}/aln.srt.bam",
+		rename_file = rename_file
 	output:
 		temp("{outdir}/sample{ii}/vcf/freebayes.vcf")
 	conda:
