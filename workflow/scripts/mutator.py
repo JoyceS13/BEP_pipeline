@@ -26,7 +26,7 @@ def mutator(reference, mutations, clones, file_name = '' ):
 
     #prepare output file
     if file_name == '':
-        file_name = f'{ref.id}_{mutations}mut'
+        file_name = '{}_{}mut'.format(ref_id,mutations)
     
     #mutates and adds clone to file
     for ii in range(clones):
@@ -62,12 +62,12 @@ if __name__ == '__main__':
     ap.add_argument('-o','--outfile', nargs='?', required=False, default = '', type = str, \
                         help = 'prefix/name of out file' )
     #if there are snakemake variables, use those, otherwise get arguments from command line
-    if snakemake in globals():
+    try:
         in_file = snakemake.input[0]
         mutations = snakemake.params["mutations"]
         clones = snakemake.params["pop_size"]
         outfile = snakemake.params["out_prefix"]
-    else:
+    except:
         args = vars(ap.parse_args())
         in_file = args['in_file']
         mutations = args['mutations']
