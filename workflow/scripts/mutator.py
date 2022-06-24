@@ -61,18 +61,19 @@ if __name__ == '__main__':
                     help='number of clones to be produced')
     ap.add_argument('-o','--outfile', nargs='?', required=False, default = '', type = str, \
                         help = 'prefix/name of out file' )
-
-    args = vars(ap.parse_args())
-    in_file = args['in_file']
-    mutations = args['mutations']
-    clones = args['clones']
-    outfile = args['outfile']
-    """
-    in_file = sys.argv[1]
-    mutations = sys.argv[2]
-    clones = sys.argv[3]
-    outfile = sys.argv[4]
-    """	
+    #if there are snakemake variables, use those, otherwise get arguments from command line
+    if snakemake in globals():
+        in_file = snakemake.input[0]
+        mutations = snakemake.params["mutations"]
+        clones = snakemake.params["pop_size"]
+        outfile = snakemake.params["out_prefix"]
+    else:
+        args = vars(ap.parse_args())
+        in_file = args['in_file']
+        mutations = args['mutations']
+        clones = args['clones']
+        outfile = args['outfile']
+    
     mutator(in_file, mutations, clones, outfile)
     
     
