@@ -186,6 +186,8 @@ rule validate:
 	params:
 		sample_index = "{ii}",
 		caller = "{caller}"
+	conda:
+		"envs/validate_env.yaml"
 	script:
 		"scripts/validate.py"
 		
