@@ -24,7 +24,9 @@ pop_size_ar = range(0,pop_size)
 outdir = f"output/{name}_{mutations}mut_{props}fcov"
 prefix = f"{name}_{mutations}mut_{pop_size}_pop"
 
-#rule all:
+rule all:
+	input:
+		expand("output/sample0/seq_{jj}.fasta", jj = pop_size_ar)
 
 #mutate reference sequence
 rule mutate:
@@ -111,7 +113,7 @@ rule bcftools_limit:
 rule gatk_call:
 	input: 
 		reference,
-		"{outdir}/sample{ii}/aln.srt.bam"
+		"{outdir}/sample{ii}/aln.srt.bam",
 		rename_file = rename_file
 	output:
 		"{outdir}/sample{ii}/vcf/gatk.vcf"
@@ -169,7 +171,7 @@ rule comparison_vcfs:
 	output:
 		temp("{outdir}/sample{ii}/vcf/comparison/{caller}_seq{jj}.diff.sites_in_files")
 	params:
-		out_prefix = {caller}_seq{jj}
+		out_prefix = "{caller}_seq{jj}"
 	conda:
 		"envs/vcftools.yaml"
 	shell:
@@ -182,8 +184,8 @@ rule validate:
 	output:
 		"{outdir}/sample{ii}/analysis/analysis_{caller}.csv"
 	params:
-		sample_index = {ii},
-		caller = {caller}
+		sample_index = "{ii}",
+		caller = "{caller}"
 	script:
 		"scripts/validate.py"
 		
