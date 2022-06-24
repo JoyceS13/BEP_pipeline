@@ -1,0 +1,7 @@
+channels:
+	-conda-forge
+	-anaconda
+dependencies:
+	-biopython = 1.79
+	-argparse = 1.4.0
+	-pandas = 1.4.2
