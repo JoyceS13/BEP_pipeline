@@ -4,6 +4,7 @@
 # in particular regarding the standardized folder structure mentioned there. 
 
 import numpy as np
+import pandas as pd
 
 configfile: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/test_config.yaml"
 	
@@ -197,6 +198,9 @@ rule validate:
 		reference = reference
 	output:
 		"{outdir}/sample{ii}/analysis/analysis_{caller}.csv"
+	output:
+		"{outdir}/results_{caller}.csv"
+	
 	params:
 		sample_index = "{ii}",
 		caller = "{caller}"
@@ -205,5 +209,15 @@ rule validate:
 	script:
 		"scripts/validate.py"
 		
-
+rule data_collection:
+	input:
+		expand("{{outdir}}/sample{ii}/analysis/analysis_{{caller}}.csv", ii = repeat_ar)
+	output:
+		"{outdir}/results_{caller}.csv"
+	conda:
+		"envs/validate_env.py"
+	params:
+		caller = "{caller}"
+	script:
+		"scripts/data_collection.py"
 
