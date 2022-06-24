@@ -38,7 +38,7 @@ rule mutate:
 		pop_size = pop_size
 	conda:
 		"envs/mutate_env.yaml"
-	shell:
+	script:
 	  	"scripts/mutator.py"
 	
 
@@ -130,7 +130,7 @@ rule varscan_call:
 	conda:
 		"envs/varscan.yaml"
 	shell:
-		"samtools mpileup -f {input} | varscan mpileup2snp - --output-vcf 1 | "bgzip -c - | tabix -p vcf - | bcftools annotate --rename-chrs {input.rename_file} - > {output}"
+		"samtools mpileup -f {input} | varscan mpileup2snp - --output-vcf 1 | bgzip -c - | tabix -p vcf - | bcftools annotate --rename-chrs {input.rename_file} - > {output}"
 
 rule freebayes_call:
 	input: 
@@ -141,7 +141,7 @@ rule freebayes_call:
 	conda:
 		"envs/freebayes.yaml"
 	shell:
-		"freebayes -f {input[0]} -p 1 {input[1]} | "bgzip -c - | tabix -p vcf - | bcftools annotate --rename-chrs {input.rename_file} - > {output}"
+		"freebayes -f {input[0]} -p 1 {input[1]} | bgzip -c - | tabix -p vcf - | bcftools annotate --rename-chrs {input.rename_file} - > {output}"
 	
 rule seq2msa:
 	input:
@@ -164,7 +164,7 @@ rule msa2vcf:
 
 rule comparison_vcfs:
 	input:
-		"{outdir}/sample{ii}/vcf/{caller}.vcf"
+		"{outdir}/sample{ii}/vcf/{caller}.vcf",
 		"{outdir}/sample{ii}/vcf/true_vcf_seq{jj}.vcf"
 	output:
 		temp("{outdir}/sample{ii}/vcf/comparison/{caller}_seq{jj}.diff.sites_in_files")
@@ -177,12 +177,15 @@ rule comparison_vcfs:
 		
 rule validate:
 	input:
-		expand("{{outdir}}/sample{{ii}}/vcf/comparison/{{caller}}_seq{jj}.diff.sites_in_files", jj = pop_size_ar)
+		comparison_vcfs = expand("{{outdir}}/sample{{ii}}/vcf/comparison/{{caller}}_seq{jj}.diff.sites_in_files", jj = pop_size_ar),
+		reference = reference
 	output:
-		"{outdir}/sample{ii}/analysis.csv"
-	shell:	
-		"python /tudelft.net/staff-umbrella/YeastVariantCalling/wsung/validate.py varscan_snps0.diff.sites_in_files varscan_snps1.diff.sites_in_files -r /tudelft.net/staff-umbrella/YeastVariantCalling/wsung/IMBvariant/reference/chromosomes/CEN.PK113-7D_chr01_pilon.fa
-		
+		"{outdir}/sample{ii}/analysis/analysis_{caller}.csv"
+	params:
+		sample_index = {ii},
+		caller = {caller}
+	script:
+		"scripts/validate.py"
 		
 
 
