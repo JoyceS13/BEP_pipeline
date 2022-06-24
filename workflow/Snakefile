@@ -6,7 +6,7 @@
 import numpy as np
 
 configfile: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/test_config.yaml"
-
+	
 ## some variables that might be nice to define at the top of the document -> put in config file
 #general variables, maybe move to config file
 reference = config["reference"]
@@ -29,7 +29,6 @@ prefix = f"{name}_{mutations}mut_{pop_size}_pop"
 #mutate reference sequence
 rule mutate:
 	input:
-		"/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/workflow/scripts/mutator.py",
 		reference
 	output:
 	  	expand("{{outdir}}/sample{{ii}}/seq_{jj}.fasta", jj = pop_size_ar)
@@ -40,7 +39,7 @@ rule mutate:
 	conda:
 		"envs/mutate_env.yaml"
 	shell:
-	  	"python {input} params.mutations params.pop_size -o params.out_prefix"
+	  	"scripts/mutator.py"
 	
 
 #simulate reads from mutated sequences
@@ -150,8 +149,6 @@ rule seq2msa:
 		"{outdir}/sample{ii}/seq{jj}.fasta"
 	output:
 		temp("{outdir}/sample{ii}/msa/msa_seq{jj}.msa")
-	conda:
-		"envs/snp-sites.yaml"
 	shell:
 		"cat {input} > {output}"
 
@@ -160,18 +157,31 @@ rule msa2vcf:
 		"{outdir}/sample{ii}/msa/msa_seq{jj}.msa"
 	output:
 		"{outdir}/sample{ii}/vcf/true_vcf_seq{jj}.vcf"
+	conda:
+		"envs/snp-sites.yaml"
 	shell:
 		"snp-sites -v -o {output} {input}"	       
-		
-		
+
 rule comparison_vcfs:
 	input:
-		var_callers = expand("{{outdir}}/sample{{ii}}/vcf/{var_caller}.vcf", var_caller = ['gatk', 'varscan', 'freebayes'])
-		true_vcfs = expand("{{outdir}}/sample{{ii}}/vcf/true_vcf_seq{jj}.vcf", jj = pop_size_ar)
+		"{outdir}/sample{ii}/vcf/{caller}.vcf"
+		"{outdir}/sample{ii}/vcf/true_vcf_seq{jj}.vcf"
+	output:
+		temp("{outdir}/sample{ii}/vcf/comparison/{caller}_seq{jj}.diff.sites_in_files")
+	params:
+		out_prefix = {caller}_seq{jj}
+	conda:
+		"envs/vcftools.yaml"
+	shell:
+		"vcftools --vcf {input[0]} --diff {input[1]} --diff-site --out params.out_prefix"
+		
+rule validate:
+	input:
+		expand("{{outdir}}/sample{{ii}}/vcf/comparison/{{caller}}_seq{jj}.diff.sites_in_files", jj = pop_size_ar)
 	output:
 		"{outdir}/sample{ii}/analysis.csv"
 	shell:	
-
+		"python /tudelft.net/staff-umbrella/YeastVariantCalling/wsung/validate.py varscan_snps0.diff.sites_in_files varscan_snps1.diff.sites_in_files -r /tudelft.net/staff-umbrella/YeastVariantCalling/wsung/IMBvariant/reference/chromosomes/CEN.PK113-7D_chr01_pilon.fa
 		
 		
 
