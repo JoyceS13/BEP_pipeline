@@ -1,0 +1,12 @@
+digraph snakemake_dag {
+    graph[bgcolor=white, margin=0];
+    node[shape=box, style=rounded, fontname=sans,                 fontsize=10, penwidth=2];
+    edge[penwidth=2, color=grey];
+	0[label = "all_test", color = "0.29 0.6 0.85", style="rounded"];
+	1[label = "group_reads", color = "0.50 0.6 0.85", style="rounded"];
+	2[label = "make_samples", color = "0.17 0.6 0.85", style="rounded"];
+	3[label = "mutate", color = "0.21 0.6 0.85", style="rounded"];
+	1 -> 0
+	2 -> 1
+	3 -> 2
+}            

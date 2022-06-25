@@ -1,0 +1,46 @@
+digraph snakemake_dag {
+    graph[bgcolor=white, margin=0];
+    node[shape=box, style=rounded, fontname=sans,                 fontsize=10, penwidth=2];
+    edge[penwidth=2, color=grey];
+	0[label = "all_test", color = "0.58 0.6 0.85", style="rounded"];
+	1[label = "make_samples", color = "0.46 0.6 0.85", style="rounded"];
+	2[label = "mutate\nii: 0\noutdir: output/test", color = "0.00 0.6 0.85", style="rounded,dashed"];
+	3[label = "make_samples", color = "0.46 0.6 0.85", style="rounded"];
+	4[label = "mutate\nii: 1\noutdir: output/test", color = "0.00 0.6 0.85", style="rounded,dashed"];
+	5[label = "make_samples", color = "0.46 0.6 0.85", style="rounded"];
+	6[label = "mutate\nii: 2\noutdir: output/test", color = "0.00 0.6 0.85", style="rounded,dashed"];
+	7[label = "make_samples", color = "0.46 0.6 0.85", style="rounded"];
+	8[label = "mutate\nii: 3\noutdir: output/test", color = "0.00 0.6 0.85", style="rounded,dashed"];
+	9[label = "make_samples", color = "0.46 0.6 0.85", style="rounded"];
+	10[label = "mutate\nii: 4\noutdir: output/test", color = "0.00 0.6 0.85", style="rounded,dashed"];
+	11[label = "make_samples", color = "0.46 0.6 0.85", style="rounded"];
+	12[label = "mutate\nii: 5\noutdir: output/test", color = "0.00 0.6 0.85", style="rounded,dashed"];
+	13[label = "make_samples", color = "0.46 0.6 0.85", style="rounded"];
+	14[label = "mutate\nii: 6\noutdir: output/test", color = "0.00 0.6 0.85", style="rounded,dashed"];
+	15[label = "make_samples", color = "0.46 0.6 0.85", style="rounded"];
+	16[label = "mutate\nii: 7\noutdir: output/test", color = "0.00 0.6 0.85", style="rounded,dashed"];
+	17[label = "make_samples", color = "0.46 0.6 0.85", style="rounded"];
+	18[label = "mutate\nii: 8\noutdir: output/test", color = "0.00 0.6 0.85", style="rounded,dashed"];
+	19[label = "make_samples", color = "0.46 0.6 0.85", style="rounded"];
+	20[label = "mutate\nii: 9\noutdir: output/test", color = "0.00 0.6 0.85", style="rounded,dashed"];
+	1 -> 0
+	3 -> 0
+	5 -> 0
+	7 -> 0
+	9 -> 0
+	11 -> 0
+	13 -> 0
+	15 -> 0
+	17 -> 0
+	19 -> 0
+	2 -> 1
+	4 -> 3
+	6 -> 5
+	8 -> 7
+	10 -> 9
+	12 -> 11
+	14 -> 13
+	16 -> 15
+	18 -> 17
+	20 -> 19
+}            

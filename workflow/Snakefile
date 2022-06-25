@@ -28,9 +28,9 @@ prefix = f"{name}_{mutations}mut_{pop_size}_pop"
 #uncomment one line to target specific rule
 rule all_test:
 	input:
-		expand("output/test/sample{ii}/seq_{jj}.fasta", ii = repeat_ar,jj = pop_size_ar) #mutate
+		#expand("output/test/sample{ii}/seq_{jj}.fasta", ii = repeat_ar,jj = pop_size_ar) #mutate
 		#expand("output/test/sample{ii}/seq_{jj}_{read_end}.fq", ii = repeat_ar, jj = pop_size_ar, read_end = [1,2]) #make_samples
-		#expand("output/test/sample{ii}/reads{read_end}.fq", ii = repeat_ar,read_end = [1,2]) #group_reads
+		expand("output/test/sample{ii}/reads{read_end}.fq", ii = repeat_ar,read_end = [1,2]) #group_reads
 		#expand("output/test/sample{ii}/aln.srt.bam", ii = repeat_ar),expand("output/test/sample{ii}/aln.srt.bam.bai", ii =repeat_ar) #bwa_map
 		#expand("output/test/sample{ii}/vcf/octopus.vcf", ii=repeat_ar) #octopus_call
 		#expand("output/test/sample{ii}/vcf/gatk.vcf", ii=repeat_ar) #gatk_call
@@ -50,7 +50,7 @@ rule mutate:
 	params:
 		out_prefix = "seq",
 		mutations = mutations,
-		pop_size = pop_size
+		pop_size = pop_size,
 		out_dir = "{outdir}/sample{ii}"
 	conda:
 		"envs/mutate_env.yaml"
@@ -64,7 +64,7 @@ rule make_samples:
 	input:
 		expand("{{outdir}}/sample{{ii}}/seq_{jj}.fasta", jj = pop_size_ar)
 	output:
-		temp(expand("{{outdir}}/sample{{ii}}/seq_{jj}_{read_end}.fq", jj = pop_size_ar, read_end = [1,2]))
+		temp(expand("{{outdir}}/sample{{ii}}/seq_{jj}_{read_end}.fq", jj = pop_size_ar, read_end = [2,1]))
 	params:
 		out_prefix =expand("seq_{jj}_",jj=pop_size_ar) ,
 		f_cov = f_cov

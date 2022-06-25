@@ -1,0 +1,66 @@
+digraph snakemake_dag {
+    graph[bgcolor=white, margin=0];
+    node[shape=box, style=rounded, fontname=sans,                 fontsize=10, penwidth=2];
+    edge[penwidth=2, color=grey];
+	0[label = "all_test", color = "0.17 0.6 0.85", style="rounded"];
+	1[label = "group_reads", color = "0.12 0.6 0.85", style="rounded"];
+	2[label = "make_samples", color = "0.50 0.6 0.85", style="rounded"];
+	3[label = "mutate\nii: 0\noutdir: output/test", color = "0.62 0.6 0.85", style="rounded,dashed"];
+	4[label = "group_reads", color = "0.12 0.6 0.85", style="rounded"];
+	5[label = "make_samples", color = "0.50 0.6 0.85", style="rounded"];
+	6[label = "mutate\nii: 1\noutdir: output/test", color = "0.62 0.6 0.85", style="rounded,dashed"];
+	7[label = "group_reads", color = "0.12 0.6 0.85", style="rounded"];
+	8[label = "make_samples", color = "0.50 0.6 0.85", style="rounded"];
+	9[label = "mutate\nii: 2\noutdir: output/test", color = "0.62 0.6 0.85", style="rounded,dashed"];
+	10[label = "group_reads", color = "0.12 0.6 0.85", style="rounded"];
+	11[label = "make_samples", color = "0.50 0.6 0.85", style="rounded"];
+	12[label = "mutate\nii: 3\noutdir: output/test", color = "0.62 0.6 0.85", style="rounded,dashed"];
+	13[label = "group_reads", color = "0.12 0.6 0.85", style="rounded"];
+	14[label = "make_samples", color = "0.50 0.6 0.85", style="rounded"];
+	15[label = "mutate\nii: 4\noutdir: output/test", color = "0.62 0.6 0.85", style="rounded,dashed"];
+	16[label = "group_reads", color = "0.12 0.6 0.85", style="rounded"];
+	17[label = "make_samples", color = "0.50 0.6 0.85", style="rounded"];
+	18[label = "mutate\nii: 5\noutdir: output/test", color = "0.62 0.6 0.85", style="rounded,dashed"];
+	19[label = "group_reads", color = "0.12 0.6 0.85", style="rounded"];
+	20[label = "make_samples", color = "0.50 0.6 0.85", style="rounded"];
+	21[label = "mutate\nii: 6\noutdir: output/test", color = "0.62 0.6 0.85", style="rounded,dashed"];
+	22[label = "group_reads", color = "0.12 0.6 0.85", style="rounded"];
+	23[label = "make_samples", color = "0.50 0.6 0.85", style="rounded"];
+	24[label = "mutate\nii: 7\noutdir: output/test", color = "0.62 0.6 0.85", style="rounded,dashed"];
+	25[label = "group_reads", color = "0.12 0.6 0.85", style="rounded"];
+	26[label = "make_samples", color = "0.50 0.6 0.85", style="rounded"];
+	27[label = "mutate\nii: 8\noutdir: output/test", color = "0.62 0.6 0.85", style="rounded,dashed"];
+	28[label = "group_reads", color = "0.12 0.6 0.85", style="rounded"];
+	29[label = "make_samples", color = "0.50 0.6 0.85", style="rounded"];
+	30[label = "mutate\nii: 9\noutdir: output/test", color = "0.62 0.6 0.85", style="rounded,dashed"];
+	1 -> 0
+	4 -> 0
+	7 -> 0
+	10 -> 0
+	13 -> 0
+	16 -> 0
+	19 -> 0
+	22 -> 0
+	25 -> 0
+	28 -> 0
+	2 -> 1
+	3 -> 2
+	5 -> 4
+	6 -> 5
+	8 -> 7
+	9 -> 8
+	11 -> 10
+	12 -> 11
+	14 -> 13
+	15 -> 14
+	17 -> 16
+	18 -> 17
+	20 -> 19
+	21 -> 20
+	23 -> 22
+	24 -> 23
+	26 -> 25
+	27 -> 26
+	29 -> 28
+	30 -> 29
+}            

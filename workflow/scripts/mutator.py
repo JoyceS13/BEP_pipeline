@@ -9,7 +9,7 @@ import random as rand
 import argparse
 import os
 
-def mutator(reference, mutations, clones, file_name = '' , out_dir):
+def mutator(reference, mutations, clones, file_name , out_dir):
 ## mutator introduces a {mutations} number of mutations to a {clones} number of clones from a reference sequence
     #reference: Fasta file containing reference sequence
     #mutations: Integer with the number of mutations that need to be introduced
