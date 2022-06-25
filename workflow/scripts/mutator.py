@@ -43,7 +43,7 @@ def mutator(reference, mutations, clones, file_name = '' , out_dir):
             nucl.remove(clone[idx]) #removes read nucleotide from potential nucleotide list
             clone[idx] = rand.choice(nucl) #assigns a new nucleotide that is different from the old nucleotide
         clone = "".join(clone)   
-        f = open(os.path.join(out_dir,file_name+'_'+str(ii)+'.fasta','w'))
+        f = open(os.path.join("{}/{}".format(os.getcwd(),out_dir),file_name+'_'+str(ii)+'.fasta','w'))
         f.write('>{}_{}mut_clone_{}\n{}\n'.format(ref_id,mutations,ii,clone))
         f.close()
               
