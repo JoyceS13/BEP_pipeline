@@ -62,15 +62,14 @@ rule mutate:
 ##needs to be altered so it can be used for different proportions and different population sizes
 rule make_samples:
 	input:
-		expand("{{outdir}}/sample{{ii}}/seq_{jj}.fasta", jj = pop_size_ar)
+		"{{outdir}}/sample{{ii}}/seq_{jj}.fasta"
 	output:
-		temp(expand("{{outdir}}/sample{{ii}}/seq_{jj}_{read_end}.fq", jj = pop_size_ar, read_end = [2,1]))
+		temp(expand("{{outdir}}/sample{{ii}}/seq_{{jj}}_{read_end}.fq", read_end = [2,1]))
 	params:
-		out_prefix =expand("seq_{jj}_",jj=pop_size_ar) ,
-		f_cov = f_cov
-	run:
-		for ii in pop_size_ar:
-			shell("art_illumina -sam -i {input[ii]} -p -l 150 -ss HS25 -f {params.f_cov[ii]} -m 200 -s 10 -o {params.out_prefix}")
+		out_prefix ="seq_{jj}_" ,
+		f_cov = f_cov[{jj}]
+	shell:
+		"art_illumina -sam -i {input} -p -l 150 -ss HS25 -f {params.f_cov} -m 200 -s 10 -o {params.out_prefix}"
 
 #group reads such that a certain population size is simulated 
 rule group_reads:
