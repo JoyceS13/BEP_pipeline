@@ -4,7 +4,7 @@
 # in particular regarding the standardized folder structure mentioned there. 
 
 import numpy as np
-import pandas as pd
+import os
 
 configfile: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/test_config.yaml"
 	
@@ -39,6 +39,7 @@ rule mutate:
 		out_prefix = "seq",
 		mutations = mutations,
 		pop_size = pop_size
+		out_dir = "{outdir}/sample{ii}"
 	conda:
 		"envs/mutate_env.yaml"
 	script:
@@ -197,13 +198,11 @@ rule validate:
 		comparison_vcfs = expand("{{outdir}}/sample{{ii}}/vcf/comparison/{{caller}}_seq{jj}.diff.sites_in_files", jj = pop_size_ar),
 		reference = reference
 	output:
-		"{outdir}/sample{ii}/analysis/analysis_{caller}.csv"
-	output:
-		"{outdir}/results_{caller}.csv"
-	
+		"{outdir}/sample{ii}/analysis/analysis_{caller}.csv"	
 	params:
 		sample_index = "{ii}",
-		caller = "{caller}"
+		caller = "{caller}",
+		out_dir = "{outdir}/sample{ii}/analysis"
 	conda:
 		"envs/validate_env.yaml"
 	script:
@@ -217,7 +216,8 @@ rule data_collection:
 	conda:
 		"envs/validate_env.py"
 	params:
-		caller = "{caller}"
+		caller = "{caller}",
+		out_dir = "{outdir}"
 	script:
 		"scripts/data_collection.py"
 
