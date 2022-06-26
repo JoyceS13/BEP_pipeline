@@ -32,7 +32,7 @@ rule all_test:
 	input:
 		#expand("output/test/sample{ii}/seq_{jj}.fasta", ii = repeat_ar,jj = pop_size_ar) #mutate
 		#expand("output/test/sample{ii}/seq_{jj}_{read_end}.fq", ii = repeat_ar, jj = pop_size_ar, read_end = [1,2]) #make_samples
-		expand("output/test/sample{ii}/reads{read_end}.fq", ii = repeat_ar,read_end = [1,2]) #group_reads
+		#expand("output/test/sample{ii}/reads{read_end}.fq", ii = repeat_ar,read_end = [1,2]) #group_reads
 		#expand("output/test/sample{ii}/aln.srt.bam", ii = repeat_ar),expand("output/test/sample{ii}/aln.srt.bam.bai", ii =repeat_ar) #bwa_map
 		#expand("output/test/sample{ii}/vcf/octopus.vcf", ii=repeat_ar) #octopus_call
 		#expand("output/test/sample{ii}/vcf/gatk.vcf", ii=repeat_ar) #gatk_call
@@ -41,7 +41,7 @@ rule all_test:
 		#expand("output/test/sample{ii}/vcf/true_vcf_seq{jj}.vcf", ii = repeat_ar, jj = pop_size_ar) #msa2vcf
 		#expand("output/test/sample{ii}/vcf/comparison/{caller}_seq{jj}.diff.sites_in_files", ii = repeat_ar, caller = ['gatk','varscan','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'], jj = pop_size_ar)
 		#expand("output/test/sample{ii}/analysis/analysis_{caller}.csv", ii = repeat_ar, caller = ['gatk','varscan','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'])
-		#expand("output/test/results_{caller}.csv", caller = ['gatk','varscan','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'])
+		expand("output/test/results_{caller}.csv", caller = ['gatk','varscan','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'])
 		
 #mutate reference sequence
 rule mutate:
@@ -151,7 +151,7 @@ rule gatk_call:
 	run:
 		shell("gatk CreateSequenceDictionary -R {input[0]}")
 		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 | bcftools annotate --rename-chrs {input.rename_file} - > unfiltered.vcf")
-		shell("gatk VariantFiltration -V unfiltered.vcf -filter "QD < 2.0" --filter-name "QD2" -filter "QUAL < 30.0" --filter-name "QUAL30" -filter "SOR > 3.0" --filter-name "SOR3" -filter "FS > 60.0" --filter-name "FS60"  -filter "MQ < 40.0" --filter-name "MQ40"  -filter "MQRankSum < -12.5" --filter-name "MQRankSum-12.5"  -filter "ReadPosRankSum < -8.0" --filter-name "ReadPosRankSum-8" -O {output}")
+		shell("gatk VariantFiltration -V unfiltered.vcf -filter QD < 2.0 --filter-name QD2 -filter QUAL < 30.0 --filter-name QUAL30 -filter SOR > 3.0 --filter-name SOR3 -filter FS > 60.0 --filter-name FS60  -filter MQ < 40.0 --filter-name MQ40  -filter MQRankSum < -12.5 --filter-name MQRankSum-12.5  -filter ReadPosRankSum < -8.0 --filter-name ReadPosRankSum-8 -O {output}")
 
 rule gatk_call_upper:
 	input: 
@@ -167,7 +167,7 @@ rule gatk_call_upper:
 	run:
 		shell("gatk CreateSequenceDictionary -R {input[0]}")
 		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 | bcftools annotate --rename-chrs {input.rename_file} - > unfiltered.vcf")
-		shell("gatk VariantFiltration -V unfiltered.vcf -filter "QD < 2.0" --filter-name "QD2" -filter "QUAL < 30.0" --filter-name "QUAL30" -filter "SOR > 3.0" --filter-name "SOR3" -filter "FS > 60.0" --filter-name "FS60"  -filter "MQ < 40.0" --filter-name "MQ40"  -filter "MQRankSum < -12.5" --filter-name "MQRankSum-12.5"  -filter "ReadPosRankSum < -8.0" --filter-name "ReadPosRankSum-8" -O {output}")
+		shell("gatk VariantFiltration -V unfiltered.vcf -filter QD < 2.0 --filter-name QD2 -filter QUAL < 30.0 --filter-name QUAL30 -filter SOR > 3.0 --filter-name SOR3 -filter FS > 60.0 --filter-name FS60  -filter MQ < 40.0 --filter-name MQ40  -filter MQRankSum < -12.5 --filter-name MQRankSum-12.5  -filter ReadPosRankSum < -8.0 --filter-name ReadPosRankSum-8 -O {output}")
 
 rule gatk_call_lower:
 	input: 
@@ -183,8 +183,8 @@ rule gatk_call_lower:
 	run:
 		shell("gatk CreateSequenceDictionary -R {input[0]}")
 		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 | bcftools annotate --rename-chrs {input.rename_file} - > unfiltered.vcf")
-		shell("gatk VariantFiltration -V unfiltered.vcf -filter "QD < 2.0" --filter-name "QD2" -filter "QUAL < 30.0" --filter-name "QUAL30" -filter "SOR > 3.0" --filter-name "SOR3" -filter "FS > 60.0" --filter-name "FS60"  -filter "MQ < 40.0" --filter-name "MQ40"  -filter "MQRankSum < -12.5" --filter-name "MQRankSum-12.5"  -filter "ReadPosRankSum < -8.0" --filter-name "ReadPosRankSum-8" -O {output}")
-		
+		shell("gatk VariantFiltration -V unfiltered.vcf -filter QD < 2.0 --filter-name QD2 -filter QUAL < 30.0 --filter-name QUAL30 -filter SOR > 3.0 --filter-name SOR3 -filter FS > 60.0 --filter-name FS60  -filter MQ < 40.0 --filter-name MQ40  -filter MQRankSum < -12.5 --filter-name MQRankSum-12.5  -filter ReadPosRankSum < -8.0 --filter-name ReadPosRankSum-8 -O {output}")
+
 		
 rule gatk_unfiltered_call:
 	input: 
