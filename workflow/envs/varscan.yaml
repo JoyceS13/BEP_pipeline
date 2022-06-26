@@ -5,4 +5,5 @@ dependencies:
   -samtools = 1.15.1
   -bgzip = 0.4.0
   -tabix = 0.2.6
+  -bam-readcounts = 0.8
   
