@@ -210,9 +210,13 @@ rule varscan_call_unfiltered:
 		rename_file = rename_file
 	output:
 		"{outdir}/sample{ii}/vcf/varscan_unfiltered.vcf"
+	params:
+		temp_file = "{outdir}/sample{ii}/vcf/temp.vcf",
+		temp_file2 = "{outdir}/sample{ii}/vcf/temp.vcf.gz"
 	run:
-		shell("samtools mpileup -f {input} | varscan mpileup2snp - --output-vcf 1 --min-coverage 10 --min-var-freq 0.10 --p-value 0.10 > temp_varscan_unfiltered.vcf")
-		shell(" bgzip temp_varscan_unfiltered.vcf | tabix -p vcf - | bcftools annotate --rename-chrs {input.rename_file} - > {output}")
+		shell("samtools mpileup -f {input} | varscan mpileup2snp - --output-vcf 1 --min-coverage 10 --min-var-freq 0.10 --p-value 0.10 > {params.temp_file")
+		shell(" bgzip {params.temp_file} | tabix -p vcf {params.temp_file2} | bcftools annotate --rename-chrs {input.rename_file} - > {output}")
+		shell(" rm {params.temp_file2}")
 
 rule freebayes_call:
 	input: 
@@ -221,10 +225,14 @@ rule freebayes_call:
 		rename_file = rename_file
 	output:
 		"{outdir}/sample{ii}/vcf/freebayes.vcf"
+	params:
+		temp_file = "{outdir}/sample{ii}/vcf/temp.vcf",
+		temp_file2 = "{outdir}/sample{ii}/vcf/temp.vcf.gz"
 	run:
-		shell("freebayes -f {input[0]} -p 1 --pooled-continuous -0 {input[1]} > temp_freebayes.vcf")
-		shell(" bgzip temp_freebayes.vcf | tabix -p vcf temp_freebayes.vcf.gz | bcftools annotate --rename-chrs {input.rename_file} temp_freebayes.vcf.gz > {output}")
-
+		shell("freebayes -f {input[0]} -p 1 --pooled-continuous -0 {input[1]} > {params.temp_file}")
+		shell(" bgzip {params.temp_file} | tabix -p vcf {params.temp_file2} | bcftools annotate --rename-chrs {input.rename_file} - > {output}")
+		shell(" rm {params.temp_file2}")
+		
 rule freebayes_call_unfiltered:
 	input: 
 		reference,
@@ -232,11 +240,13 @@ rule freebayes_call_unfiltered:
 		rename_file = rename_file
 	output:
 		"{outdir}/sample{ii}/vcf/freebayes_unfiltered.vcf"
-	conda:
-		"envs/freebayes.yaml"
-	shell:
-		"freebayes -f {input[0]} -p 1 --pooled-continuous {input[1]} | bgzip -c - | tabix -p vcf - | bcftools annotate --rename-chrs {input.rename_file} - > {output}"
-		
+	params:
+		temp_file = "{outdir}/sample{ii}/vcf/temp.vcf",
+		temp_file2 = "{outdir}/sample{ii}/vcf/temp.vcf.gz"
+	run:
+		shell("freebayes -f {input[0]} -p 1 --pooled-continuous {input[1]} > {params.temp_file}")
+		shell(" bgzip {params.temp_file} | tabix -p vcf {params.temp_file2} | bcftools annotate --rename-chrs {input.rename_file} - > {output}")
+		shell(" rm {params.temp_file2}")
 
 rule seq2msa:
 	input:
