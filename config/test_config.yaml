@@ -4,6 +4,6 @@ mutations: 200
 repeats: 10
 f_cov: [20,20]
 working_dir: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung"
-rename_file: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP-pipeline/config/rename_chr.txt"
-varscan_filter: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP-pipeline/workflow/scripts/fpfilter.pl"
+rename_file: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/rename_chr.txt"
+varscan_filter: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/workflow/scripts/fpfilter.pl"
 ploidy: 2

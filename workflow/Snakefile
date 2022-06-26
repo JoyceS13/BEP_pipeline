@@ -32,12 +32,12 @@ rule all_test:
 	input:
 		#expand("output/test/sample{ii}/seq_{jj}.fasta", ii = repeat_ar,jj = pop_size_ar) #mutate
 		#expand("output/test/sample{ii}/seq_{jj}_{read_end}.fq", ii = repeat_ar, jj = pop_size_ar, read_end = [1,2]) #make_samples
-		expand("output/test/sample{ii}/reads{read_end}.fq", ii = repeat_ar,read_end = [1,2]) #group_reads
+		#expand("output/test/sample{ii}/reads{read_end}.fq", ii = repeat_ar,read_end = [1,2]) #group_reads
 		#expand("output/test/sample{ii}/aln.srt.bam", ii = repeat_ar),expand("output/test/sample{ii}/aln.srt.bam.bai", ii =repeat_ar) #bwa_map
 		#expand("output/test/sample{ii}/vcf/octopus.vcf", ii=repeat_ar) #octopus_call
 		#expand("output/test/sample{ii}/vcf/gatk.vcf", ii=repeat_ar) #gatk_call
 		#expand("output/test/sample{ii}/vcf/varscan.vcf", ii=repeat_ar) #varscan_call
-		#expand("output/test/sample{ii}/vcf/freebayes.vcf", ii=repeat_ar) #freebayes_call
+		expand("output/test/sample{ii}/vcf/freebayes.vcf", ii=repeat_ar) #freebayes_call
 		#expand("output/test/sample{ii}/vcf/true_vcf_seq{jj}.vcf", ii = repeat_ar, jj = pop_size_ar) #msa2vcf
 		#expand("output/test/sample{ii}/vcf/comparison/{caller}_seq{jj}.diff.sites_in_files", ii = repeat_ar, caller = ['gatk','varscan','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'], jj = pop_size_ar)
 		#expand("output/test/sample{ii}/analysis/analysis_{caller}.csv", ii = repeat_ar, caller = ['gatk','varscan','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'])
@@ -66,14 +66,14 @@ rule make_samples:
 	input:
 		"{outdir}/sample{ii}/seq_{jj}.fasta"
 	output:
-		temp(expand("{{outdir}}/sample{{ii}}/seq_{{jj}}_{read_end}.fq", read_end = [1,2]))
+		expand("{{outdir}}/sample{{ii}}/seq_{{jj}}_{read_end}.fq", read_end = [1,2])
 	params:
 		out_prefix ="{outdir}/sample{ii}/seq_{jj}_" ,
 		fcov = lambda wildcards: f_cov[int(wildcards.jj)],
 		out_dir = "{outdir}/sample{ii}"
 	run:
-		shell("cd {params.out_dir}")
 		shell("art_illumina -na -i {input} -p -l 150 -ss HS25 -f {params.fcov} -m 200 -s 10 -o {params.out_prefix}")
+		
 
 #group reads such that a certain population size is simulated 
 rule group_reads:
@@ -92,8 +92,6 @@ rule bwa_map:
   	output:
 	  	"{outdir}/sample{ii}/aln.srt.bam",
 		"{outdir}/sample{ii}/aln.srt.bam.bai"
-	conda:
-		"envs/bwa_map_env.yaml"
 	run:
 	  	shell("bwa mem {input} | samtools addreplacerg -r ID:dummy -r LB:dummy -r SM:dummy -r PL:ILLUMINA - | samtools view -1 - | samtools sort - > {output[0]}")
 		shell("samtools index {output[0]}")
@@ -146,12 +144,10 @@ rule gatk_call:
 		"{outdir}/sample{ii}/vcf/gatk.vcf"
 	params:
 		ploidy = ploidy
-	conda:
-		"envs/gatk4.yaml"
 	run:
 		shell("gatk CreateSequenceDictionary -R {input[0]}")
 		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 | bcftools annotate --rename-chrs {input.rename_file} - > unfiltered.vcf")
-		shell("gatk VariantFiltration -V unfiltered.vcf -filter "QD < 2.0" --filter-name "QD2" -filter "QUAL < 30.0" --filter-name "QUAL30" -filter "SOR > 3.0" --filter-name "SOR3" -filter "FS > 60.0" --filter-name "FS60"  -filter "MQ < 40.0" --filter-name "MQ40"  -filter "MQRankSum < -12.5" --filter-name "MQRankSum-12.5"  -filter "ReadPosRankSum < -8.0" --filter-name "ReadPosRankSum-8" -O {output}")
+		shell("gatk VariantFiltration -V unfiltered.vcf -filter QD < 2.0 --filter-name QD2 -filter QUAL < 30.0 --filter-name QUAL30 -filter SOR > 3.0 --filter-name SOR3 -filter FS > 60.0 --filter-name FS60  -filter MQ < 40.0 --filter-name MQ40  -filter MQRankSum < -12.5 --filter-name MQRankSum-12.5  -filter ReadPosRankSum < -8.0 --filter-name ReadPosRankSum-8 -O {output}")
 
 rule gatk_call_upper:
 	input: 
@@ -162,12 +158,10 @@ rule gatk_call_upper:
 		"{outdir}/sample{ii}/vcf/gatk_upper.vcf"
 	params:
 		ploidy = 5
-	conda:
-		"envs/gatk4.yaml"
 	run:
 		shell("gatk CreateSequenceDictionary -R {input[0]}")
 		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 | bcftools annotate --rename-chrs {input.rename_file} - > unfiltered.vcf")
-		shell("gatk VariantFiltration -V unfiltered.vcf -filter "QD < 2.0" --filter-name "QD2" -filter "QUAL < 30.0" --filter-name "QUAL30" -filter "SOR > 3.0" --filter-name "SOR3" -filter "FS > 60.0" --filter-name "FS60"  -filter "MQ < 40.0" --filter-name "MQ40"  -filter "MQRankSum < -12.5" --filter-name "MQRankSum-12.5"  -filter "ReadPosRankSum < -8.0" --filter-name "ReadPosRankSum-8" -O {output}")
+		shell("gatk VariantFiltration -V unfiltered.vcf -filter QD < 2.0 --filter-name QD2 -filter QUAL < 30.0 --filter-name QUAL30 -filter SOR > 3.0 --filter-name SOR3 -filter FS > 60.0 --filter-name FS60  -filter MQ < 40.0 --filter-name MQ40  -filter MQRankSum < -12.5 --filter-name MQRankSum-12.5  -filter ReadPosRankSum < -8.0 --filter-name ReadPosRankSum-8 -O {output}")
 
 rule gatk_call_lower:
 	input: 
@@ -178,13 +172,11 @@ rule gatk_call_lower:
 		"{outdir}/sample{ii}/vcf/gatk_lower.vcf"
 	params:
 		ploidy = 2
-	conda:
-		"envs/gatk4.yaml"
 	run:
 		shell("gatk CreateSequenceDictionary -R {input[0]}")
 		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 | bcftools annotate --rename-chrs {input.rename_file} - > unfiltered.vcf")
-		shell("gatk VariantFiltration -V unfiltered.vcf -filter "QD < 2.0" --filter-name "QD2" -filter "QUAL < 30.0" --filter-name "QUAL30" -filter "SOR > 3.0" --filter-name "SOR3" -filter "FS > 60.0" --filter-name "FS60"  -filter "MQ < 40.0" --filter-name "MQ40"  -filter "MQRankSum < -12.5" --filter-name "MQRankSum-12.5"  -filter "ReadPosRankSum < -8.0" --filter-name "ReadPosRankSum-8" -O {output}")
-		
+		shell("gatk VariantFiltration -V unfiltered.vcf -filter QD < 2.0 --filter-name QD2 -filter QUAL < 30.0 --filter-name QUAL30 -filter SOR > 3.0 --filter-name SOR3 -filter FS > 60.0 --filter-name FS60  -filter MQ < 40.0 --filter-name MQ40  -filter MQRankSum < -12.5 --filter-name MQRankSum-12.5  -filter ReadPosRankSum < -8.0 --filter-name ReadPosRankSum-8 -O {output}")
+
 		
 rule gatk_unfiltered_call:
 	input: 
@@ -195,8 +187,6 @@ rule gatk_unfiltered_call:
 		"{outdir}/sample{ii}/vcf/gatk_unfiltered.vcf"
 	params:
 		ploidy = ploidy
-	conda:
-		"envs/gatk4.yaml"
 	run:
 		shell("gatk CreateSequenceDictionary -R {input[0]}")
 		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 | bcftools annotate --rename-chrs {input.rename_file} - > {output}")		
@@ -208,10 +198,10 @@ rule varscan_call:
 		bam = "{outdir}/sample{ii}/aln.srt.bam"
 	output:
 		"{outdir}/sample{ii}/vcf/varscan.vcf"
-	conda:
-		"envs/varscan.yaml"
-	shell:
-		"bam-readcount –q 1 –b 20 –f {input.reference} –l {input.unfiltered_call} {input.bam} | perl fpfilter.pl {input.unfiltered_call} - –output-basename {output}"
+	run:
+		shell("conda activate bamreadcount")	
+		shell("bam-readcount –q 1 –b 20 –f {input.reference} –l {input.unfiltered_call} {input.bam} | perl fpfilter.pl {input.unfiltered_call} - –output-basename {output}")
+		shell("conda activate var_call")
 
 rule varscan_call_unfiltered:
 	input: 
@@ -220,10 +210,9 @@ rule varscan_call_unfiltered:
 		rename_file = rename_file
 	output:
 		"{outdir}/sample{ii}/vcf/varscan_unfiltered.vcf"
-	conda:
-		"envs/varscan.yaml"
-	shell:
-		"samtools mpileup -f {input} | varscan mpileup2snp - --output-vcf 1 --min-coverage 10 --min-var-freq 0.10 --p-value 0.10 | bgzip -c - | tabix -p vcf - | bcftools annotate --rename-chrs {input.rename_file} - > {output}"
+	run:
+		shell("samtools mpileup -f {input} | varscan mpileup2snp - --output-vcf 1 --min-coverage 10 --min-var-freq 0.10 --p-value 0.10 > temp_varscan_unfiltered.vcf")
+		shell(" bgzip temp_varscan_unfiltered.vcf | tabix -p vcf - | bcftools annotate --rename-chrs {input.rename_file} - > {output}")
 
 rule freebayes_call:
 	input: 
@@ -232,10 +221,9 @@ rule freebayes_call:
 		rename_file = rename_file
 	output:
 		"{outdir}/sample{ii}/vcf/freebayes.vcf"
-	conda:
-		"envs/freebayes.yaml"
-	shell:
-		"freebayes -f {input[0]} -p 1 --pooled-continuous -0 {input[1]} | bgzip -c - | tabix -p vcf - | bcftools annotate --rename-chrs {input.rename_file} - > {output}"
+	run:
+		shell("freebayes -f {input[0]} -p 1 --pooled-continuous -0 {input[1]} > temp_freebayes.vcf")
+		shell(" bgzip temp_freebayes.vcf | tabix -p vcf temp_freebayes.vcf.gz | bcftools annotate --rename-chrs {input.rename_file} temp_freebayes.vcf.gz > {output}")
 
 rule freebayes_call_unfiltered:
 	input: 
@@ -253,17 +241,17 @@ rule freebayes_call_unfiltered:
 rule seq2msa:
 	input:
 		reference,
-		"{outdir}/sample{ii}/seq{jj}.fasta"
+		"{outdir}/sample{ii}/seq_{jj}.fasta"
 	output:
-		temp("{outdir}/sample{ii}/msa/msa_seq{jj}.msa")
+		temp("{outdir}/sample{ii}/msa/msa_seq_{jj}.fasta")
 	shell:
 		"cat {input} > {output}"
 
 rule msa2vcf:
 	input: 
-		"{outdir}/sample{ii}/msa/msa_seq{jj}.msa"
+		"{outdir}/sample{ii}/msa/msa_seq_{jj}.fasta"
 	output:
-		"{outdir}/sample{ii}/vcf/true_vcf_seq{jj}.vcf"
+		"{outdir}/sample{ii}/vcf/true_vcf_seq_{jj}.vcf"
 	conda:
 		"envs/snp-sites.yaml"
 	shell:
@@ -272,11 +260,11 @@ rule msa2vcf:
 rule comparison_vcfs:
 	input:
 		"{outdir}/sample{ii}/vcf/{caller}.vcf",
-		"{outdir}/sample{ii}/vcf/true_vcf_seq{jj}.vcf"
+		"{outdir}/sample{ii}/vcf/true_vcf_seq_{jj}.vcf"
 	output:
-		temp("{outdir}/sample{ii}/vcf/comparison/{caller}_seq{jj}.diff.sites_in_files")
+		temp("{outdir}/sample{ii}/vcf/comparison/{caller}_seq_{jj}.diff.sites_in_files")
 	params:
-		out_prefix = "{caller}_seq{jj}"
+		out_prefix = "{caller}_seq_{jj}"
 	conda:
 		"envs/vcftools.yaml"
 	shell:
@@ -284,7 +272,7 @@ rule comparison_vcfs:
 		
 rule validate:
 	input:
-		comparison_vcfs = expand("{{outdir}}/sample{{ii}}/vcf/comparison/{{caller}}_seq{jj}.diff.sites_in_files", jj = pop_size_ar),
+		comparison_vcfs = expand("{{outdir}}/sample{{ii}}/vcf/comparison/{{caller}}_seq_{jj}.diff.sites_in_files", jj = pop_size_ar),
 		reference = reference
 	output:
 		"{outdir}/sample{ii}/analysis/analysis_{caller}.csv"	
