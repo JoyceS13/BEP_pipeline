@@ -62,25 +62,25 @@ rule mutate:
 ##needs to be altered so it can be used for different proportions and different population sizes
 rule make_samples:
 	input:
-		"{{outdir}}/sample{{ii}}/seq_{jj}.fasta"
+		"{outdir}/sample{ii}/seq_{jj}.fasta"
 	output:
-		temp(expand("{{outdir}}/sample{{ii}}/seq_{{jj}}_{read_end}.fq", read_end = [2,1]))
+		temp(expand("{{outdir}}/sample{{ii}}/seq_{{jj}}_{read_end}.fq", read_end = [1,2]))
 	params:
-		out_prefix ="seq_{jj}_" ,
-		f_cov = f_cov[{jj}]
-	shell:
-		"art_illumina -sam -i {input} -p -l 150 -ss HS25 -f {params.f_cov} -m 200 -s 10 -o {params.out_prefix}"
+		out_prefix ="{outdir}/sample{ii}/seq_{jj}_" ,
+		fcov = lambda wildcards: f_cov[int(wildcards.jj)],
+		out_dir = "{outdir}/sample{ii}"
+	run:
+		shell("cd {params.out_dir}")
+		shell("art_illumina -na -sam -i {input} -p -l 150 -ss HS25 -f {params.fcov} -m 200 -s 10 -o {params.out_prefix}")
 
 #group reads such that a certain population size is simulated 
 rule group_reads:
   	input:
-	  	reads1 = expand("{{outdir}}/sample{{ii}}/seq_{jj}_1.fq", jj = pop_size_ar),
-		reads2 = expand("{{outdir}}/sample{{ii}}/seq_{jj}_2.fq", jj = pop_size_ar)
+	  	expand("{{outdir}}/sample{{ii}}/seq_{jj}_{{read_end}}.fq", jj = pop_size_ar),
 	output:
-		expand("{{outdir}}/sample{{ii}}/reads{read_end}.fq", read_end = [1,2])
+		"{outdir}/sample{ii}/reads{read_end}.fq"
 	shell:
-		"cat input.reads1 > reads1.fq"
-		"cat input.reads2 > reads2.fq"
+		"cat {input} > {output}"
 		
 #maps reads, adds read group information (for GATK calling), and converts it into sorted bam, additionally indexes the file
 rule bwa_map:
