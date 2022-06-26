@@ -39,9 +39,9 @@ rule all_test:
 		#expand("output/test/sample{ii}/vcf/varscan.vcf", ii=repeat_ar) #varscan_call
 		#expand("output/test/sample{ii}/vcf/freebayes.vcf", ii=repeat_ar) #freebayes_call
 		#expand("output/test/sample{ii}/vcf/true_vcf_seq{jj}.vcf", ii = repeat_ar, jj = pop_size_ar) #msa2vcf
-		#expand("output/test/sample{ii}/vcf/comparison/{caller}_seq{jj}.diff.sites_in_files", ii = repeat_ar, caller = ['gatk','varscan','freebayes'], jj = pop_size_ar)
-		#expand("output/test/sample{ii}/analysis/analysis_{caller}.csv", ii = repeat_ar, caller = ['gatk','varscan','freebayes'])
-		#expand("output/test/results_{caller}.csv", caller = ['gatk','varscan','freebayes'])
+		#expand("output/test/sample{ii}/vcf/comparison/{caller}_seq{jj}.diff.sites_in_files", ii = repeat_ar, caller = ['gatk','varscan','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'], jj = pop_size_ar)
+		#expand("output/test/sample{ii}/analysis/analysis_{caller}.csv", ii = repeat_ar, caller = ['gatk','varscan','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'])
+		#expand("output/test/results_{caller}.csv", caller = ['gatk','varscan','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'])
 		
 #mutate reference sequence
 rule mutate:
