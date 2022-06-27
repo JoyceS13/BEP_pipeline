@@ -161,7 +161,7 @@ rule gatk_call_upper:
 		"{outdir}/sample{ii}/aln.srt.bam",
 		rename_file = rename_file
 	output:
-		"{outdir}/sample{ii}/vcf/gatk_upper.vcf"
+		"{outdir}/sample{ii}/vcf/gatk_upper.vcf",
 		temp_file = temp("{outdir}/sample{ii}/vcf/temp2_gatk.vcf"),
 		temp_unfiltered = temp("{outdir}/sample{ii}/vcf/temp2_unfiltered_gatk.vcf")
 	params:
@@ -191,7 +191,7 @@ rule gatk_call_lower:
 		"{outdir}/sample{ii}/aln.srt.bam",
 		rename_file = rename_file
 	output:
-		"{outdir}/sample{ii}/vcf/gatk_lower.vcf"
+		"{outdir}/sample{ii}/vcf/gatk_lower.vcf",
 		temp_file = temp("{outdir}/sample{ii}/vcf/temp3_gatk.vcf"),
 		temp_unfiltered = temp("{outdir}/sample{ii}/vcf/temp3_unfiltered_gatk.vcf")
 	params:
@@ -231,7 +231,7 @@ rule gatk_unfiltered_call:
 
 rule varscan_call_extra_filter:
 	input: 
-		unfiltered_vcf = "{outdir}/sample{ii}/vcf/temp5.vcf,
+		unfiltered_vcf = "{outdir}/sample{ii}/vcf/temp5.vcf",
 		reference = reference,
 		bam = "{outdir}/sample{ii}/aln.srt.bam",
 		rename_file = rename_file,
