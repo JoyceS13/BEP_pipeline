@@ -6,7 +6,7 @@
 import numpy as np
 import os
 
-configfile: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/test_config.yaml"
+configfile: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/config50cov_10rep.yaml"
 	
 ## some variables that might be nice to define at the top of the document -> put in config file
 #general variables, maybe move to config file
@@ -15,17 +15,25 @@ name = config["name"]
 mutations = config["mutations"]
 repeats = config["repeats"]
 f_cov = config["f_cov"]
+proportions = np.array(config["props"])
 rename_file = config["rename_file"]
 ploidy = config["ploidy"]
 varscan_filter = config["varscan_filter"]
 
 #dependent global variables
 repeat_ar = range(0,repeats)
-props = "_".join(str(cov) for cov in f_cov)
 pop_size = len(f_cov)
 pop_size_ar = range(0,pop_size)
 outdir = f"output/{name}_{mutations}mut_{props}fcov"
 prefix = f"{name}_{mutations}mut_{pop_size}_pop"
+f_cov_ar = f_cov*proportions
+props = create_names(proportions)
+
+def create_names(proportions):
+	props = []
+	for proportion in proportions:
+		props.append("_".join(str(cov) for cov in proportion))
+	return props
 
 #uncomment one line to target specific rule
 rule all_test:
@@ -41,7 +49,7 @@ rule all_test:
 		#expand("output/test/sample{ii}/vcf/true_vcf_seq{jj}.vcf", ii = repeat_ar, jj = pop_size_ar) #msa2vcf
 		#expand("output/test/sample{ii}/vcf/comparison/{caller}_seq{jj}.diff.sites_in_files", ii = repeat_ar, caller = ['gatk','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'], jj = pop_size_ar)
 		#expand("output/test/sample{ii}/analysis/analysis_{caller}.csv", ii = repeat_ar, caller = ['gatk','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'])
-		expand("output/test/results_{caller}.csv", caller = ['gatk','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'])
+		expand("output/{fcov}fcov/{props}props/results_{caller}.csv", fcov = f_cov, props = props, caller = ['gatk','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'])
 		
 #mutate reference sequence
 rule mutate:
