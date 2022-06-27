@@ -7,4 +7,4 @@ f_cov: 50
 working_dir: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung"
 rename_file: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/rename_chr.txt"
 varscan_filter: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/workflow/scripts/fpfilter.pl"
-ploidy: 2
+callers: ['gatk','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan','freebayes_unfiltered']
