@@ -44,7 +44,8 @@ rule all_test:
 		#expand("output/test/sample{ii}/vcf/true_vcf_seq{jj}.vcf", ii = repeat_ar, jj = pop_size_ar) #msa2vcf
 		#expand("output/test/sample{ii}/vcf/comparison/{caller}_seq{jj}.diff.sites_in_files", ii = repeat_ar, caller = caller_ar, jj = pop_size_ar)
 		#expand("output/test/sample{ii}/analysis/analysis_{caller}.csv", ii = repeat_ar, caller = caller_ar)
-		expand("output/{fcov}fcov/{props}props/results_{caller}.csv", fcov = f_cov, props = props, caller = caller_ar)
+		expand("output/{fcov}fcov/{props}props/results_{caller}.csv", \
+		       fcov = f_cov, props = props, caller = caller_ar)
 		
 #get correct parameters to run		
 def get_pop_range(props, outdir, proportions):
@@ -69,7 +70,8 @@ rule mutate:
 	input:
 		reference
 	output:
-	  	expand("{{outdir}}/sample{{ii}}/seq_{jj}.fasta", jj = lambda wildcards:get_pop_range(props, wildcards.outdir, proportions))
+	  	expand("{{outdir}}/sample{{ii}}/seq_{jj}.fasta", \
+		       jj = lambda wildcards:get_pop_range(props, wildcards.outdir, proportions))
 	params:
 		out_prefix = "seq",
 		mutations = mutations,
@@ -97,7 +99,8 @@ rule make_samples:
 #group reads such that a certain population size is simulated 
 rule group_reads:
   	input:
-	  	expand("{{outdir}}/sample{{ii}}/seq_{jj}_{{read_end}}.fq", jj = lambda wildcards:get_pop_range(props, wildcards.outdir, proportions))
+	  	expand("{{outdir}}/sample{{ii}}/seq_{jj}_{{read_end}}.fq", \
+		       jj = lambda wildcards:get_pop_range(props, wildcards.outdir, proportions))
 	output:
 		"{outdir}/sample{ii}/reads{read_end}.fq"
 	shell:
@@ -114,7 +117,8 @@ rule bwa_map:
 		sam = temp("{outdir}/sample{ii}/aln.sam")
 	run:
 	  	shell("bwa mem {input} >{output.sam}")
-		shell("samtools addreplacerg -r ID:dummy -r LB:dummy -r SM:dummy -r PL:ILLUMINA {output.sam} | samtools view -1 - | samtools sort - > {output[0]}")
+		shell("samtools addreplacerg -r ID:dummy -r LB:dummy -r SM:dummy -r PL:ILLUMINA {output.sam} \
+			| samtools view -1 - | samtools sort - > {output[0]}")
 		shell("samtools index {output[0]}")
 		#shell("gatk CreateSequenceDictionary -R {input[0]}")
 
@@ -126,11 +130,11 @@ rule gatk_call:
 		"{outdir}/sample{ii}/aln.srt.bam",
 		rename_file = rename_file
 	output:
-		"{outdir}/sample{ii}/vcf/gatk.vcf"
+		"{outdir}/sample{ii}/vcf/gatk.vcf",
+		temp_file = temp("{outdir}/sample{ii}/vcf/temp1_gatk.vcf"),
+		temp_unfiltered = temp("{outdir}/sample{ii}/vcf/temp1_unfiltered_gatk.vcf")
 	params:
-		ploidy = pop_size,
-		temp_file = "{outdir}/sample{ii}/vcf/temp1_gatk.vcf",
-		temp_unfiltered = "{outdir}/sample{ii}/vcf/temp1_unfiltered_gatk.vcf",
+		ploidy = len(get_pop_range(props, outdir, proportions)),
 		QD = "QD<2.0",
 		QUAL = "QUAL<30.0",
 		SOR = "SOR>3.0",
@@ -138,12 +142,18 @@ rule gatk_call:
 		MQ = "MQ<40.0",
 		MQRankSum = "MQRankSum<-12.5",
 		RPRS = "ReadPosRankSum<-8.0",
-		temps = "{outdir}/sample{ii}/vcf/temp1*"
 	run:
-		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 -O {params.temp_file}")
-		shell("bcftools annotate --rename-chrs {input.rename_file} {params.temp_file} > {params.temp_unfiltered}")
-		shell("gatk VariantFiltration -V {params.temp_unfiltered} -filter {params.QD:q} --filter-name QD2 -filter {params.QUAL:q} --filter-name QUAL30 -filter {params.SOR:q} --filter-name SOR3 -filter {params.FS:q} --filter-name FS60  -filter {params.MQ:q} --filter-name MQ40  -filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  -filter {params.RPRS:q} --filter-name ReadPosRankSum-8 -O {output}")
-		shell("rm {params.temps}")
+		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy {params.ploidy} -O {output.temp_file}")
+		shell("bcftools annotate --rename-chrs {input.rename_file} {output.temp_file} > {output.temp_unfiltered}")
+		shell("gatk VariantFiltration -V {params.temp_unfiltered} \
+			-filter {params.QD:q} --filter-name QD2 \
+			-filter {params.QUAL:q} --filter-name QUAL30 \
+			-filter {params.SOR:q} --filter-name SOR3 \
+			-filter {params.FS:q} --filter-name FS60 \
+			-filter {params.MQ:q} --filter-name MQ40 \
+			-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  \
+			-filter {params.RPRS:q} --filter-name ReadPosRankSum-8 
+		      	-O {output[0]}")
 		
 rule gatk_call_upper:
 	input: 
@@ -152,10 +162,9 @@ rule gatk_call_upper:
 		rename_file = rename_file
 	output:
 		"{outdir}/sample{ii}/vcf/gatk_upper.vcf"
+	temp_file = temp("{outdir}/sample{ii}/vcf/temp2_gatk.vcf"),
+		temp_unfiltered = temp("{outdir}/sample{ii}/vcf/temp2_unfiltered_gatk.vcf")
 	params:
-		ploidy = 5,
-		temp_file = "{outdir}/sample{ii}/vcf/temp2_gatk.vcf",
-		temp_unfiltered = "{outdir}/sample{ii}/vcf/temp2_unfiltered_gatk.vcf",
 		QD = "QD<2.0",
 		QUAL = "QUAL<30.0",
 		SOR = "SOR>3.0",
@@ -163,12 +172,18 @@ rule gatk_call_upper:
 		MQ = "MQ<40.0",
 		MQRankSum = "MQRankSum<-12.5",
 		RPRS = "ReadPosRankSum<-8.0",
-		temps = "{outdir}/sample{ii}/vcf/temp2*"
 	run:
-		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 -O {params.temp_file}")
-		shell("bcftools annotate --rename-chrs {input.rename_file} {params.temp_file} > {params.temp_unfiltered}")
-		shell("gatk VariantFiltration -V {params.temp_unfiltered} -filter {params.QD:q} --filter-name QD2 -filter {params.QUAL:q} --filter-name QUAL30 -filter {params.SOR:q} --filter-name SOR3 -filter {params.FS:q} --filter-name FS60  -filter {params.MQ:q} --filter-name MQ40  -filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  -filter {params.RPRS:q} --filter-name ReadPosRankSum-8 -O {output}")
-		shell("rm {params.temps}")
+		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 5 -O {output.temp_file}")
+		shell("bcftools annotate --rename-chrs {input.rename_file} {output.temp_file} > {output.temp_unfiltered}")
+		shell("gatk VariantFiltration -V {params.temp_unfiltered} \
+			-filter {params.QD:q} --filter-name QD2 \
+			-filter {params.QUAL:q} --filter-name QUAL30 \
+			-filter {params.SOR:q} --filter-name SOR3 \
+			-filter {params.FS:q} --filter-name FS60 \
+			-filter {params.MQ:q} --filter-name MQ40 \
+			-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  \
+			-filter {params.RPRS:q} --filter-name ReadPosRankSum-8 
+		      	-O {output[0]}")
 		
 rule gatk_call_lower:
 	input: 
@@ -177,10 +192,9 @@ rule gatk_call_lower:
 		rename_file = rename_file
 	output:
 		"{outdir}/sample{ii}/vcf/gatk_lower.vcf"
+		temp_file = temp("{outdir}/sample{ii}/vcf/temp3_gatk.vcf"),
+		temp_unfiltered = temp("{outdir}/sample{ii}/vcf/temp3_unfiltered_gatk.vcf")
 	params:
-		ploidy = 2,
-		temp_file = "{outdir}/sample{ii}/vcf/temp3_gatk.vcf",
-		temp_unfiltered = "{outdir}/sample{ii}/vcf/temp3_unfiltered_gatk.vcf",
 		QD = "QD<2.0",
 		QUAL = "QUAL<30.0",
 		SOR = "SOR>3.0",
@@ -188,12 +202,18 @@ rule gatk_call_lower:
 		MQ = "MQ<40.0",
 		MQRankSum = "MQRankSum<-12.5",
 		RPRS = "ReadPosRankSum<-8.0",
-		temps = "{outdir}/sample{ii}/vcf/temp3*"
 	run:
-		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 -O {params.temp_file}")
-		shell("bcftools annotate --rename-chrs {input.rename_file} {params.temp_file} > {params.temp_unfiltered}")
-		shell("gatk VariantFiltration -V {params.temp_unfiltered} -filter {params.QD:q} --filter-name QD2 -filter {params.QUAL:q} --filter-name QUAL30 -filter {params.SOR:q} --filter-name SOR3 -filter {params.FS:q} --filter-name FS60  -filter {params.MQ:q} --filter-name MQ40  -filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  -filter {params.RPRS:q} --filter-name ReadPosRankSum-8 -O {output}")
-		shell("rm {params.temps}")
+		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 -O {output.temp_file}")
+		shell("bcftools annotate --rename-chrs {input.rename_file} {output.temp_file} > {output.temp_unfiltered}")
+		shell("gatk VariantFiltration -V {params.temp_unfiltered} \
+			-filter {params.QD:q} --filter-name QD2 \
+			-filter {params.QUAL:q} --filter-name QUAL30 \
+			-filter {params.SOR:q} --filter-name SOR3 \
+			-filter {params.FS:q} --filter-name FS60 \
+			-filter {params.MQ:q} --filter-name MQ40 \
+			-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  \
+			-filter {params.RPRS:q} --filter-name ReadPosRankSum-8 
+		      	-O {output[0]}")
 		
 rule gatk_unfiltered_call:
 	input: 
@@ -201,63 +221,57 @@ rule gatk_unfiltered_call:
 		"{outdir}/sample{ii}/aln.srt.bam",
 		rename_file = rename_file
 	output:
-		"{outdir}/sample{ii}/vcf/gatk_unfiltered.vcf"
+		"{outdir}/sample{ii}/vcf/gatk_unfiltered.vcf",
+		temp_file = temp("{outdir}/sample{ii}/vcf/temp_gatk.vcf")
 	params:
-		ploidy = ploidy,
-		temp_file = "{outdir}/sample{ii}/vcf/temp_gatk.vcf"
+		ploidy = len(get_pop_range(props, outdir, proportions))
 	run:
-		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 -O {params.temp_file}")	
-		shell(" bcftools annotate --rename-chrs {input.rename_file} {params.temp_file} > {output}")		
-		shell(" rm {params.temp_file}")		
+		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy {params.ploidy} -O {output.temp_file}")	
+		shell(" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file} > {output[0]}")			
 
-rule varscan_call:
+rule varscan_call_extra_filter:
 	input: 
+		unfiltered_vcf = "{outdir}/sample{ii}/vcf/temp5.vcf,
 		reference = reference,
 		bam = "{outdir}/sample{ii}/aln.srt.bam",
-		rename_file = rename_file
+		rename_file = rename_file,
+		filter_script = varscan_filter
 	output:
-		"{outdir}/sample{ii}/vcf/varscan.vcf"
-	params:
-		filter_script = varscan_filter,
-		bed = "{outdir}/sample{ii}/vcf/temp4.bed",
-		readcounts = "{outdir}/sample{ii}/vcf/temp4.variant.readcounts",
-		filter_prefix = "{outdir}/sample{ii}/vcf/varscan_variants.filter",
+		"{outdir}/sample{ii}/vcf/varscan_extra_filter.vcf",
+		temp_file = temp("{outdir}/sample{ii}/vcf/temp4.vcf"),
+		temp_unfiltered = temp("{outdir}/sample{ii}/vcf/temp4.vcf"),
+		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp4.vcf.gz"),
+		readcounts = temp("{outdir}/sample{ii}/vcf/temp4.variant.readcounts"),
+		bed = temp("{outdir}/sample{ii}/vcf/temp4.bed"),
 		filter_pass = "{outdir}/sample{ii}/vcf/varscan_variants.filter.pass",
-		temp_file = "{outdir}/sample{ii}/vcf/temp4.vcf",
-		temp_unfiltered = "{outdir}/sample{ii}/vcf/temp4.vcf",
-		temp_file2 = "{outdir}/sample{ii}/vcf/temp4.vcf.gz",
-		temps = "{outdir}/sample{ii}/vcf/temp4*",
 		filter_fails = "{outdir}/sample{ii}/vcf/varscan.vcf.fail"
+	params:
+		filter_prefix = "{outdir}/sample{ii}/vcf/varscan_variants.filter",
 	run:		
-		shell("samtools mpileup -f {input[0]} {input.bam} | varscan mpileup2snp - --output-vcf 1 --min-coverage 10 --min-var-freq 0.10 --p-value 0.10 > {params.temp_unfiltered}")	
-		shell("convert2bed -i vcf -o bed < {params.temp_unfiltered} > {params.bed}")
-		shell("bam-readcount -q 1 -b 20 -f {input.reference} -l {params.bed} {input.bam} > {params.readcounts}")
-		shell("perl {params.filter_script} {params.temp_unfiltered} {params.readcounts} –output-basename {params.filter_prefix}")
-		shell("mv outfile.pass {params.temp_file}")
-		shell("mv outfile.fail {params.filter_fails}")
-		shell("bgzip {params.temp_file} ")
-                shell("tabix -f -p vcf {params.temp_file2} ")
-                shell("bcftools annotate --rename-chrs {input.rename_file} {params.temp_file2} > {output}")		
-		shell("rm {params.temps}")
+		shell("convert2bed -i vcf -o bed < {input.unfiltered_vcf} > {output.bed}")
+		shell("bam-readcount -q 1 -b 20 -f {output.reference} -l {output.bed} {input.bam} > {output.readcounts}")
+		shell("perl {input.filter_script} {output.temp_unfiltered} {output.readcounts} –output-basename {params.filter_prefix}")
+		shell("mv outfile.pass {output.temp_file}")
+		shell("mv outfile.fail {output.filter_fails}")
+		shell("bgzip -c {output.temp_file} ")
+                shell("tabix -f -p vcf {output.temp_file2} ")
+                shell("bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} > {output[0]}")		
 		
-rule varscan_call_unfiltered:
+rule varscan_call:
 	input: 
 		reference,
 		"{outdir}/sample{ii}/aln.srt.bam",
 		rename_file = rename_file
 	output:
-		"{outdir}/sample{ii}/vcf/varscan_unfiltered.vcf"
-	params:
-		temp_file = "{outdir}/sample{ii}/vcf/temp5.vcf",
-		temp_file2 = "{outdir}/sample{ii}/vcf/temp5.vcf.gz",
-		temps = "{outdir}/sample{ii}/vcf/temp5*"
+		"{outdir}/sample{ii}/vcf/varscan.vcf",
+		temp_file = temp("{outdir}/sample{ii}/vcf/temp5.vcf"),
+		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp5.vcf.gz"),
 	run:
-		shell("samtools mpileup -f {input[0]} {input[1]} | varscan mpileup2snp - --output-vcf 1 --min-coverage 10 --min-var-freq 0.10 --p-value 0.10 > {params.temp_file}")
-		shell(" bgzip {params.temp_file} ")
-		shell(" tabix -f -p vcf {params.temp_file2} ")
-		shell(" bcftools annotate --rename-chrs {input.rename_file} {params.temp_file2} > {output}")
-		shell(" rm {params.temp_file2}")
-		shell("rm {params.temps}")
+		shell("samtools mpileup -f {input[0]} {input[1]} \
+			| varscan mpileup2snp - --output-vcf 1 --min-coverage 10 --min-var-freq 0.10 --p-value 0.10 > {output.temp_file}")
+		shell(" bgzip -c {output.temp_file} > {output.temp_file2}")
+		shell(" tabix -f -p vcf {output.temp_file2} ")
+		shell(" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} > {output[0]}")
 		
 rule freebayes_call:
 	input: 
@@ -265,18 +279,14 @@ rule freebayes_call:
 		"{outdir}/sample{ii}/aln.srt.bam",
 		rename_file = rename_file
 	output:
-		"{outdir}/sample{ii}/vcf/freebayes.vcf"
-	params:
-		temp_file = "{outdir}/sample{ii}/vcf/temp6.vcf",
-		temp_file2 = "{outdir}/sample{ii}/vcf/temp6.vcf.gz",
-		temps = "{outdir}/sample{ii}/vcf/temp6*"
+		"{outdir}/sample{ii}/vcf/freebayes.vcf",
+		temp_file = temp("{outdir}/sample{ii}/vcf/temp6.vcf"),
+		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp6.vcf.gz")
 	run:
-		shell("freebayes -f {input[0]} -p 1 --pooled-continuous -0 {input[1]} > {params.temp_file}")
-		shell(" bgzip {params.temp_file}")
-		shell("tabix -f -p vcf {params.temp_file2} ")
-		shell("bcftools annotate --rename-chrs {input.rename_file} {params.temp_file2} > {output}")
-		shell(" rm {params.temp_file2}")
-		shell("rm {params.temps}")
+		shell("freebayes -f {input[0]} -p 1 --pooled-continuous -0 {input[1]} > {output.temp_file}")
+		shell(" bgzip -c {output.temp_file}")
+		shell("tabix -f -p vcf {output.temp_file2} ")
+		shell("bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} > {output[0]}")
 		
 rule freebayes_call_unfiltered:
 	input: 
@@ -284,18 +294,14 @@ rule freebayes_call_unfiltered:
 		"{outdir}/sample{ii}/aln.srt.bam",
 		rename_file = rename_file
 	output:
-		"{outdir}/sample{ii}/vcf/freebayes_unfiltered.vcf"
-	params:
-		temp_file = "{outdir}/sample{ii}/vcf/temp7.vcf",
-		temp_file2 = "{outdir}/sample{ii}/vcf/temp7.vcf.gz",
-		temps = "{outdir}/sample{ii}/vcf/temp7*"
+		"{outdir}/sample{ii}/vcf/freebayes_unfiltered.vcf",
+		temp_file = temp("{outdir}/sample{ii}/vcf/temp7.vcf"),
+		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp7.vcf.gz")
 	run:
-		shell("freebayes -f {input[0]} -p 1 --pooled-continuous {input[1]} > {params.temp_file}")
-		shell(" bgzip {params.temp_file} ")
-		shell(" tabix -f -p vcf {params.temp_file2} ")
-		shell(" bcftools annotate --rename-chrs {input.rename_file} {params.temp_file2} > {output}")
-		shell(" rm {params.temp_file2}")
-		shell("rm {params.temps}")
+		shell("freebayes -f {input[0]} -p 1 --pooled-continuous {input[1]} > {output.temp_file}")
+		shell(" bgzip -c {output.temp_file} ")
+		shell(" tabix -f -p vcf {output.temp_file2} ")
+		shell(" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} > {output[0]}")
 
 rule seq2msa:
 	input:
@@ -310,7 +316,7 @@ rule msa2vcf:
 	input: 
 		"{outdir}/sample{ii}/msa/msa_seq_{jj}.fasta"
 	output:
-		"{outdir}/sample{ii}/vcf/true_vcf_seq_{jj}.vcf"
+		temp("{outdir}/sample{ii}/vcf/true_vcf_seq_{jj}.vcf")
 	conda:
 		"envs/snp-sites.yaml"
 	shell:
