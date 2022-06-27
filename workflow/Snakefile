@@ -172,18 +172,18 @@ rule gatk_call_upper:
 		MQ = "MQ<40.0",
 		MQRankSum = "MQRankSum<-12.5",
 		RPRS = "ReadPosRankSum<-8.0",
-	run:
-		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 5 -O {output.temp_file}")
-		shell("bcftools annotate --rename-chrs {input.rename_file} {output.temp_file} > {output.temp_unfiltered}")
-		shell("gatk VariantFiltration -V {params.temp_unfiltered} \
-			-filter {params.QD:q} --filter-name QD2 \
-			-filter {params.QUAL:q} --filter-name QUAL30 \
-			-filter {params.SOR:q} --filter-name SOR3 \
-			-filter {params.FS:q} --filter-name FS60 \
-			-filter {params.MQ:q} --filter-name MQ40 \
-			-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  \
-			-filter {params.RPRS:q} --filter-name ReadPosRankSum-8 
-		      	-O {output[0]}")
+	shell:
+		"gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 5 -O {output.temp_file} ;"
+		"bcftools annotate --rename-chrs {input.rename_file} {output.temp_file} > {output.temp_unfiltered} ;"
+		"gatk VariantFiltration -V {params.temp_unfiltered} "
+			"-filter {params.QD:q} --filter-name QD2 "
+			"-filter {params.QUAL:q} --filter-name QUAL30 "
+			"-filter {params.SOR:q} --filter-name SOR3"
+			"-filter {params.FS:q} --filter-name FS60 "
+			"-filter {params.MQ:q} --filter-name MQ40 "
+			"-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  "
+			"-filter {params.RPRS:q} --filter-name ReadPosRankSum-8" 
+		      	"-O {output[0]}"
 		
 rule gatk_call_lower:
 	input: 
@@ -202,18 +202,18 @@ rule gatk_call_lower:
 		MQ = "MQ<40.0",
 		MQRankSum = "MQRankSum<-12.5",
 		RPRS = "ReadPosRankSum<-8.0",
-	run:
-		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 -O {output.temp_file}")
-		shell("bcftools annotate --rename-chrs {input.rename_file} {output.temp_file} > {output.temp_unfiltered}")
-		shell("gatk VariantFiltration -V {params.temp_unfiltered} \
-			-filter {params.QD:q} --filter-name QD2 \
-			-filter {params.QUAL:q} --filter-name QUAL30 \
-			-filter {params.SOR:q} --filter-name SOR3 \
-			-filter {params.FS:q} --filter-name FS60 \
-			-filter {params.MQ:q} --filter-name MQ40 \
-			-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  \
-			-filter {params.RPRS:q} --filter-name ReadPosRankSum-8 
-		      	-O {output[0]}")
+	shell:
+		"gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 -O {output.temp_file} ;"
+		"bcftools annotate --rename-chrs {input.rename_file} {output.temp_file} > {output.temp_unfiltered} ;"
+		"gatk VariantFiltration -V {params.temp_unfiltered} "
+			"-filter {params.QD:q} --filter-name QD2 "
+			"-filter {params.QUAL:q} --filter-name QUAL30 "
+			"-filter {params.SOR:q} --filter-name SOR3"
+			"-filter {params.FS:q} --filter-name FS60 "
+			"-filter {params.MQ:q} --filter-name MQ40 "
+			"-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  "
+			"-filter {params.RPRS:q} --filter-name ReadPosRankSum-8" 
+		      	"-O {output[0]}"
 		
 rule gatk_unfiltered_call:
 	input: 
