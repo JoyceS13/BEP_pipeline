@@ -29,6 +29,8 @@ def create_names(proportions):
 #dependent global variables
 repeat_ar = range(0,repeats)
 props = create_names(proportions)
+pop_range = range(0,len(proportions[0]))
+pop_size = len(pop_range)
 
 #uncomment one line to target specific rule
 rule all_test:
@@ -47,14 +49,8 @@ rule all_test:
 		expand("output/{fcov}fcov/{props}props/results_{caller}.csv", \
 		       fcov = f_cov, props = props, caller = caller_ar)
 		
-#get correct parameters to run		
-def get_pop_range(props, outdir, proportions):
-	for ii, prop in enumerate(props):
-		if prop in outdir:
-			jj = range(0,len(proportions[ii]))
-	return jj
-
-def get_pop_range(props, outdir, proportions, f_cov, jj):
+#get correct parameters to run	
+def get_fcov(props, outdir, proportions, f_cov, jj):
 	for ii, prop in enumerate(props):
 		if prop in outdir:
 			proportion = proportions[ii][jj]
@@ -70,8 +66,7 @@ rule mutate:
 	input:
 		reference
 	output:
-	  	expand("{{outdir}}/sample{{ii}}/seq_{jj}.fasta", \
-		       jj = lambda wildcards:get_pop_range(props, wildcards.outdir, proportions))
+	  	expand("{{outdir}}/sample{{ii}}/seq_{jj}.fasta", jj = pop_range)
 	params:
 		out_prefix = "seq",
 		mutations = mutations,
@@ -99,8 +94,7 @@ rule make_samples:
 #group reads such that a certain population size is simulated 
 rule group_reads:
   	input:
-	  	expand("{{outdir}}/sample{{ii}}/seq_{jj}_{{read_end}}.fq", \
-		       jj = lambda wildcards:get_pop_range(props, wildcards.outdir, proportions))
+	  	expand("{{outdir}}/sample{{ii}}/seq_{jj}_{{read_end}}.fq", jj = pop_range)
 	output:
 		"{outdir}/sample{ii}/reads{read_end}.fq"
 	shell:
@@ -224,7 +218,7 @@ rule gatk_unfiltered_call:
 		"{outdir}/sample{ii}/vcf/gatk_unfiltered.vcf",
 		temp_file = temp("{outdir}/sample{ii}/vcf/temp_gatk.vcf")
 	params:
-		ploidy = len(get_pop_range(props, outdir, proportions))
+		ploidy = pop_size
 	run:
 		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy {params.ploidy} -O {output.temp_file}")	
 		shell(" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file} > {output[0]}")			
@@ -337,7 +331,7 @@ rule comparison_vcfs:
 		
 rule validate:
 	input:
-		comparison_vcfs = expand("{{outdir}}/sample{{ii}}/vcf/comparison/{{caller}}_seq_{jj}.diff.sites_in_files", jj = pop_size_ar),
+		comparison_vcfs = expand("{{outdir}}/sample{{ii}}/vcf/comparison/{{caller}}_seq_{jj}.diff.sites_in_files", jj = pop_range),
 		reference = reference
 	output:
 		"{outdir}/sample{ii}/analysis/analysis_{caller}.csv"	
