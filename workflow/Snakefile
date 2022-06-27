@@ -88,7 +88,7 @@ rule make_samples:
 	input:
 		"{outdir}/sample{ii}/seq_{jj}.fasta"
 	output:
-		expand("{{outdir}}/sample{{ii}}/seq_{{jj}}_{read_end}.fq", read_end = [1,2])
+		temp(expand("{{outdir}}/sample{{ii}}/seq_{{jj}}_{read_end}.fq", read_end = [1,2]))
 	params:
 		out_prefix ="{outdir}/sample{ii}/seq_{jj}_" ,
 		fcov = lambda wildcards: get_fcov(props, wildcards.outdir, proportions, f_cov, wildcards.jj),
