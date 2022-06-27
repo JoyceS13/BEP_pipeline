@@ -56,7 +56,11 @@ def get_pop_range(props, outdir, proportions):
 def get_pop_range(props, outdir, proportions, f_cov, jj):
 	for ii, prop in enumerate(props):
 		if prop in outdir:
-			fcov = f_cov*proportions[ii][jj]
+			proportion = proportions[ii][jj]
+	for ii, cov in enumerate(f_cov):
+		if str(cov)+"fcov" in outdir:
+			coverage = cov
+	fcov = coverage*proportion
 	return fcov
 		
 
