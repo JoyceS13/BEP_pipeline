@@ -83,7 +83,7 @@ def validate(comparison_vcfs, caller,  reference, sample_index, out_dir):
     #df['called_pos'] = df['called_pos'].astype('object')
     #df.loc[sample_index,'called_pos'] = [fp]
         
-    df.to_csv(open(os.path.join("{}/{}".format(os.getcwd(),out_dir),'analysis_{}.csv'.format(caller)),"w"),index=False)
+    df.to_csv(open(os.path.join("{}/{}".format(os.getcwd(),out_dir),'analysis_{}.csv'.format(caller)),"w"))
     print(df)        
 
     return df

@@ -20,20 +20,21 @@ rename_file = config["rename_file"]
 ploidy = config["ploidy"]
 varscan_filter = config["varscan_filter"]
 
+def create_names(proportions):
+        props = []
+        for proportion in proportions:
+                props.append("_".join(str(cov) for cov in proportion))
+        return props
+
 #dependent global variables
 repeat_ar = range(0,repeats)
-pop_size = len(f_cov)
+props = create_names(proportions)
+pop_size = len(props)
 pop_size_ar = range(0,pop_size)
 outdir = f"output/{name}_{mutations}mut_{props}fcov"
 prefix = f"{name}_{mutations}mut_{pop_size}_pop"
 f_cov_ar = f_cov*proportions
-props = create_names(proportions)
 
-def create_names(proportions):
-	props = []
-	for proportion in proportions:
-		props.append("_".join(str(cov) for cov in proportion))
-	return props
 
 #uncomment one line to target specific rule
 rule all_test:
@@ -66,7 +67,16 @@ rule mutate:
 		"envs/mutate_env.yaml"
 	script:
 	  	"scripts/mutator.py"
-	
+
+def get_fcov(f_cov_ar, props, jj,outdir):
+	if int(jj)%2 == 0:
+		idx = 0
+	else:
+		idx = 1
+	for ii, prop in enumerate(props):
+		if prop in outdir:
+			fcov = f_cov_ar[ii][idx]
+	return fcov	
 
 #simulate reads from mutated sequences
 ##needs to be altered so it can be used for different proportions and different population sizes
@@ -77,11 +87,10 @@ rule make_samples:
 		expand("{{outdir}}/sample{{ii}}/seq_{{jj}}_{read_end}.fq", read_end = [1,2])
 	params:
 		out_prefix ="{outdir}/sample{ii}/seq_{jj}_" ,
-		fcov = lambda wildcards: f_cov[int(wildcards.jj)],
+		fcov = lambda wildcards: get_fcov(f_cov_ar, props, wildcards.jj, wildcards.outdir),
 		out_dir = "{outdir}/sample{ii}"
 	run:
 		shell("art_illumina -na -i {input} -p -l 150 -ss HS25 -f {params.fcov} -m 200 -s 10 -o {params.out_prefix}")
-		
 
 #group reads such that a certain population size is simulated 
 rule group_reads:
@@ -99,11 +108,13 @@ rule bwa_map:
 	  	expand("{{outdir}}/sample{{ii}}/reads{read_end}.fq", read_end = [1,2])
   	output:
 	  	"{outdir}/sample{ii}/aln.srt.bam",
-		"{outdir}/sample{ii}/aln.srt.bam.bai"
+		"{outdir}/sample{ii}/aln.srt.bam.bai",
+		sam = temp("{outdir}/sample{ii}/aln.sam")
 	run:
-	  	shell("bwa mem {input} | samtools addreplacerg -r ID:dummy -r LB:dummy -r SM:dummy -r PL:ILLUMINA - | samtools view -1 - | samtools sort - > {output[0]}")
+	  	shell("bwa mem {input} >{output.sam}")
+		shell("samtools addreplacerg -r ID:dummy -r LB:dummy -r SM:dummy -r PL:ILLUMINA {output.sam} | samtools view -1 - | samtools sort - > {output[0]}")
 		shell("samtools index {output[0]}")
-		shell("gatk CreateSequenceDictionary -R {output[0]}")
+		#shell("gatk CreateSequenceDictionary -R {input[0]}")
 
 #after creation some vcf headers and/or chromosome names are adjusted
 rule bcftools_call:
@@ -153,8 +164,8 @@ rule gatk_call:
 		"{outdir}/sample{ii}/vcf/gatk.vcf"
 	params:
 		ploidy = pop_size,
-		temp_file = "{outdir}/sample{ii}/vcf/temp_gatk.vcf",
-		temp_unfiltered = "{outdir}/sample{ii}/vcf/temp_unfiltered_gatk.vcf",
+		temp_file = "{outdir}/sample{ii}/vcf/temp1_gatk.vcf",
+		temp_unfiltered = "{outdir}/sample{ii}/vcf/temp1_unfiltered_gatk.vcf",
 		QD = "QD<2.0",
 		QUAL = "QUAL<30.0",
 		SOR = "SOR>3.0",
@@ -162,7 +173,7 @@ rule gatk_call:
 		MQ = "MQ<40.0",
 		MQRankSum = "MQRankSum<-12.5",
 		RPRS = "ReadPosRankSum<-8.0",
-		temps = "{outdir}/sample{ii}/vcf/temp*"
+		temps = "{outdir}/sample{ii}/vcf/temp1*"
 	run:
 		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 -O {params.temp_file}")
 		shell("bcftools annotate --rename-chrs {input.rename_file} {params.temp_file} > {params.temp_unfiltered}")
@@ -178,8 +189,8 @@ rule gatk_call_upper:
 		"{outdir}/sample{ii}/vcf/gatk_upper.vcf"
 	params:
 		ploidy = 5,
-		temp_file = "{outdir}/sample{ii}/vcf/temp_gatk.vcf",
-		temp_unfiltered = "{outdir}/sample{ii}/vcf/temp_unfiltered_gatk.vcf",
+		temp_file = "{outdir}/sample{ii}/vcf/temp2_gatk.vcf",
+		temp_unfiltered = "{outdir}/sample{ii}/vcf/temp2_unfiltered_gatk.vcf",
 		QD = "QD<2.0",
 		QUAL = "QUAL<30.0",
 		SOR = "SOR>3.0",
@@ -187,7 +198,7 @@ rule gatk_call_upper:
 		MQ = "MQ<40.0",
 		MQRankSum = "MQRankSum<-12.5",
 		RPRS = "ReadPosRankSum<-8.0",
-		temps = "{outdir}/sample{ii}/vcf/temp*"
+		temps = "{outdir}/sample{ii}/vcf/temp2*"
 	run:
 		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 -O {params.temp_file}")
 		shell("bcftools annotate --rename-chrs {input.rename_file} {params.temp_file} > {params.temp_unfiltered}")
@@ -203,8 +214,8 @@ rule gatk_call_lower:
 		"{outdir}/sample{ii}/vcf/gatk_lower.vcf"
 	params:
 		ploidy = 2,
-		temp_file = "{outdir}/sample{ii}/vcf/temp_gatk.vcf",
-		temp_unfiltered = "{outdir}/sample{ii}/vcf/temp_unfiltered_gatk.vcf",
+		temp_file = "{outdir}/sample{ii}/vcf/temp3_gatk.vcf",
+		temp_unfiltered = "{outdir}/sample{ii}/vcf/temp3_unfiltered_gatk.vcf",
 		QD = "QD<2.0",
 		QUAL = "QUAL<30.0",
 		SOR = "SOR>3.0",
@@ -212,7 +223,7 @@ rule gatk_call_lower:
 		MQ = "MQ<40.0",
 		MQRankSum = "MQRankSum<-12.5",
 		RPRS = "ReadPosRankSum<-8.0",
-		temps = "{outdir}/sample{ii}/vcf/temp*"
+		temps = "{outdir}/sample{ii}/vcf/temp3*"
 	run:
 		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 -O {params.temp_file}")
 		shell("bcftools annotate --rename-chrs {input.rename_file} {params.temp_file} > {params.temp_unfiltered}")
@@ -232,7 +243,8 @@ rule gatk_unfiltered_call:
 	run:
 		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 -O {params.temp_file}")	
 		shell(" bcftools annotate --rename-chrs {input.rename_file} {params.temp_file} > {output}")		
-		
+		shell(" rm {params.temp_file}")		
+
 rule varscan_call:
 	input: 
 		reference = reference,
@@ -242,14 +254,14 @@ rule varscan_call:
 		"{outdir}/sample{ii}/vcf/varscan.vcf"
 	params:
 		filter_script = varscan_filter,
-		bed = "{outdir}/sample{ii}/vcf/temp.bed",
-		readcounts = "{outdir}/sample{ii}/vcf/temp.variant.readcounts",
+		bed = "{outdir}/sample{ii}/vcf/temp4.bed",
+		readcounts = "{outdir}/sample{ii}/vcf/temp4.variant.readcounts",
 		filter_prefix = "{outdir}/sample{ii}/vcf/varscan_variants.filter",
 		filter_pass = "{outdir}/sample{ii}/vcf/varscan_variants.filter.pass",
-		temp_file = "{outdir}/sample{ii}/vcf/temp.vcf",
-		temp_unfiltered = "{outdir}/sample{ii}/vcf/temp.vcf",
-		temp_file2 = "{outdir}/sample{ii}/vcf/temp.vcf.gz",
-		temps = "{outdir}/sample{ii}/vcf/temp*",
+		temp_file = "{outdir}/sample{ii}/vcf/temp4.vcf",
+		temp_unfiltered = "{outdir}/sample{ii}/vcf/temp4.vcf",
+		temp_file2 = "{outdir}/sample{ii}/vcf/temp4.vcf.gz",
+		temps = "{outdir}/sample{ii}/vcf/temp4*",
 		filter_fails = "{outdir}/sample{ii}/vcf/varscan.vcf.fail"
 	run:		
 		shell("samtools mpileup -f {input[0]} {input.bam} | varscan mpileup2snp - --output-vcf 1 --min-coverage 10 --min-var-freq 0.10 --p-value 0.10 > {params.temp_unfiltered}")	
@@ -271,9 +283,9 @@ rule varscan_call_unfiltered:
 	output:
 		"{outdir}/sample{ii}/vcf/varscan_unfiltered.vcf"
 	params:
-		temp_file = "{outdir}/sample{ii}/vcf/temp.vcf",
-		temp_file2 = "{outdir}/sample{ii}/vcf/temp.vcf.gz",
-		temps = "{outdir}/sample{ii}/vcf/temp*"
+		temp_file = "{outdir}/sample{ii}/vcf/temp5.vcf",
+		temp_file2 = "{outdir}/sample{ii}/vcf/temp5.vcf.gz",
+		temps = "{outdir}/sample{ii}/vcf/temp5*"
 	run:
 		shell("samtools mpileup -f {input[0]} {input[1]} | varscan mpileup2snp - --output-vcf 1 --min-coverage 10 --min-var-freq 0.10 --p-value 0.10 > {params.temp_file}")
 		shell(" bgzip {params.temp_file} ")
@@ -290,9 +302,9 @@ rule freebayes_call:
 	output:
 		"{outdir}/sample{ii}/vcf/freebayes.vcf"
 	params:
-		temp_file = "{outdir}/sample{ii}/vcf/temp.vcf",
-		temp_file2 = "{outdir}/sample{ii}/vcf/temp.vcf.gz",
-		temps = "{outdir}/sample{ii}/vcf/temp*"
+		temp_file = "{outdir}/sample{ii}/vcf/temp6.vcf",
+		temp_file2 = "{outdir}/sample{ii}/vcf/temp6.vcf.gz",
+		temps = "{outdir}/sample{ii}/vcf/temp6*"
 	run:
 		shell("freebayes -f {input[0]} -p 1 --pooled-continuous -0 {input[1]} > {params.temp_file}")
 		shell(" bgzip {params.temp_file}")
@@ -309,9 +321,9 @@ rule freebayes_call_unfiltered:
 	output:
 		"{outdir}/sample{ii}/vcf/freebayes_unfiltered.vcf"
 	params:
-		temp_file = "{outdir}/sample{ii}/vcf/temp.vcf",
-		temp_file2 = "{outdir}/sample{ii}/vcf/temp.vcf.gz",
-		temps = "{outdir}/sample{ii}/vcf/temp*"
+		temp_file = "{outdir}/sample{ii}/vcf/temp7.vcf",
+		temp_file2 = "{outdir}/sample{ii}/vcf/temp7.vcf.gz",
+		temps = "{outdir}/sample{ii}/vcf/temp7*"
 	run:
 		shell("freebayes -f {input[0]} -p 1 --pooled-continuous {input[1]} > {params.temp_file}")
 		shell(" bgzip {params.temp_file} ")
