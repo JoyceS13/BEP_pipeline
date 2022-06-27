@@ -105,7 +105,7 @@ if __name__ == '__main__':
     try:
         vcfs = snakemake.input['comparison_vcfs']
         ref = snakemake.input['reference']
-        idx = snakemake.params['sample-index']
+        idx = snakemake.params['sample_index']
         caller = snakemake.params['caller']
         out_dir = snakemake.params['out_dir']
         

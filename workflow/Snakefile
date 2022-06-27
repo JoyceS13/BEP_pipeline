@@ -39,9 +39,9 @@ rule all_test:
 		#expand("output/test/sample{ii}/vcf/varscan.vcf", ii=repeat_ar) #varscan_call
 		#expand("output/test/sample{ii}/vcf/freebayes.vcf", ii=repeat_ar) #freebayes_call
 		#expand("output/test/sample{ii}/vcf/true_vcf_seq{jj}.vcf", ii = repeat_ar, jj = pop_size_ar) #msa2vcf
-		#expand("output/test/sample{ii}/vcf/comparison/{caller}_seq{jj}.diff.sites_in_files", ii = repeat_ar, caller = ['gatk','varscan','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'], jj = pop_size_ar)
-		#expand("output/test/sample{ii}/analysis/analysis_{caller}.csv", ii = repeat_ar, caller = ['gatk','varscan','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'])
-		expand("output/test/results_{caller}.csv", caller = ['gatk','varscan','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'])
+		#expand("output/test/sample{ii}/vcf/comparison/{caller}_seq{jj}.diff.sites_in_files", ii = repeat_ar, caller = ['gatk','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'], jj = pop_size_ar)
+		#expand("output/test/sample{ii}/analysis/analysis_{caller}.csv", ii = repeat_ar, caller = ['gatk','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'])
+		expand("output/test/results_{caller}.csv", caller = ['gatk','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan_unfiltered','freebayes_unfiltered'])
 		
 #mutate reference sequence
 rule mutate:
@@ -153,13 +153,13 @@ rule gatk_call:
 		FS = "FS>60.0",
 		MQ = "MQ<40.0",
 		MQRankSum = "MQRankSum<-12.5",
-		RPRS = "ReadPosRankSum<-8.0"
-		
+		RPRS = "ReadPosRankSum<-8.0",
+		temps = "{outdir}/sample{ii}/vcf/temp*"
 	run:
 		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 -O {params.temp_file}")
 		shell("bcftools annotate --rename-chrs {input.rename_file} {params.temp_file} > {params.temp_unfiltered}")
-		shell("gatk VariantFiltration -V {params.temp_unfiltered} -filter {params.QD} --filter-name QD2 -filter {params.QUAL} --filter-name QUAL30 -filter {params.SOR} --filter-name SOR3 -filter {params.FS} --filter-name FS60  -filter {params.MQ} --filter-name MQ40  -filter {params.MQRankSum} --filter-name MQRankSum-12.5  -filter {params.RPRS} --filter-name ReadPosRankSum-8 -O {output}")
-		shell("rm temp*")
+		shell("gatk VariantFiltration -V {params.temp_unfiltered} -filter {params.QD:q} --filter-name QD2 -filter {params.QUAL:q} --filter-name QUAL30 -filter {params.SOR:q} --filter-name SOR3 -filter {params.FS:q} --filter-name FS60  -filter {params.MQ:q} --filter-name MQ40  -filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  -filter {params.RPRS:q} --filter-name ReadPosRankSum-8 -O {output}")
+		shell("rm {params.temps}")
 		
 rule gatk_call_upper:
 	input: 
@@ -178,12 +178,13 @@ rule gatk_call_upper:
 		FS = "FS>60.0",
 		MQ = "MQ<40.0",
 		MQRankSum = "MQRankSum<-12.5",
-		RPRS = "ReadPosRankSum<-8.0"
+		RPRS = "ReadPosRankSum<-8.0",
+		temps = "{outdir}/sample{ii}/vcf/temp*"
 	run:
 		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 -O {params.temp_file}")
 		shell("bcftools annotate --rename-chrs {input.rename_file} {params.temp_file} > {params.temp_unfiltered}")
-		shell("gatk VariantFiltration -V {params.temp_unfiltered} -filter {params.QD} --filter-name QD2 -filter {params.QUAL} --filter-name QUAL30 -filter {params.SOR} --filter-name SOR3 -filter {params.FS} --filter-name FS60  -filter {params.MQ} --filter-name MQ40  -filter {params.MQRankSum} --filter-name MQRankSum-12.5  -filter {params.RPRS} --filter-name ReadPosRankSum-8 -O {output}")
-		shell("rm temp*")
+		shell("gatk VariantFiltration -V {params.temp_unfiltered} -filter {params.QD:q} --filter-name QD2 -filter {params.QUAL:q} --filter-name QUAL30 -filter {params.SOR:q} --filter-name SOR3 -filter {params.FS:q} --filter-name FS60  -filter {params.MQ:q} --filter-name MQ40  -filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  -filter {params.RPRS:q} --filter-name ReadPosRankSum-8 -O {output}")
+		shell("rm {params.temps}")
 		
 rule gatk_call_lower:
 	input: 
@@ -202,12 +203,13 @@ rule gatk_call_lower:
 		FS = "FS>60.0",
 		MQ = "MQ<40.0",
 		MQRankSum = "MQRankSum<-12.5",
-		RPRS = "ReadPosRankSum<-8.0"
+		RPRS = "ReadPosRankSum<-8.0",
+		temps = "{outdir}/sample{ii}/vcf/temp*"
 	run:
 		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 1 -O {params.temp_file}")
 		shell("bcftools annotate --rename-chrs {input.rename_file} {params.temp_file} > {params.temp_unfiltered}")
-		shell("gatk VariantFiltration -V {params.temp_unfiltered} -filter {params.QD} --filter-name QD2 -filter {params.QUAL} --filter-name QUAL30 -filter {params.SOR} --filter-name SOR3 -filter {params.FS} --filter-name FS60  -filter {params.MQ} --filter-name MQ40  -filter {params.MQRankSum} --filter-name MQRankSum-12.5  -filter {params.RPRS} --filter-name ReadPosRankSum-8 -O {output}")
-		shell("rm temp*")
+		shell("gatk VariantFiltration -V {params.temp_unfiltered} -filter {params.QD:q} --filter-name QD2 -filter {params.QUAL:q} --filter-name QUAL30 -filter {params.SOR:q} --filter-name SOR3 -filter {params.FS:q} --filter-name FS60  -filter {params.MQ:q} --filter-name MQ40  -filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  -filter {params.RPRS:q} --filter-name ReadPosRankSum-8 -O {output}")
+		shell("rm {params.temps}")
 		
 rule gatk_unfiltered_call:
 	input: 
@@ -226,7 +228,8 @@ rule gatk_unfiltered_call:
 rule varscan_call:
 	input: 
 		reference = reference,
-		bam = "{outdir}/sample{ii}/aln.srt.bam"
+		bam = "{outdir}/sample{ii}/aln.srt.bam",
+		rename_file = rename_file
 	output:
 		"{outdir}/sample{ii}/vcf/varscan.vcf"
 	params:
@@ -237,17 +240,20 @@ rule varscan_call:
 		filter_pass = "{outdir}/sample{ii}/vcf/varscan_variants.filter.pass",
 		temp_file = "{outdir}/sample{ii}/vcf/temp.vcf",
 		temp_unfiltered = "{outdir}/sample{ii}/vcf/temp.vcf",
-		temp_file2 = "{outdir}/sample{ii}/vcf/temp.vcf.gz"
+		temp_file2 = "{outdir}/sample{ii}/vcf/temp.vcf.gz",
+		temps = "{outdir}/sample{ii}/vcf/temp*",
+		filter_fails = "{outdir}/sample{ii}/vcf/varscan.vcf.fail"
 	run:		
 		shell("samtools mpileup -f {input[0]} {input.bam} | varscan mpileup2snp - --output-vcf 1 --min-coverage 10 --min-var-freq 0.10 --p-value 0.10 > {params.temp_unfiltered}")	
 		shell("convert2bed -i vcf -o bed < {params.temp_unfiltered} > {params.bed}")
 		shell("bam-readcount -q 1 -b 20 -f {input.reference} -l {params.bed} {input.bam} > {params.readcounts}")
-		shell("perl {params.filter_script} {input.unfiltered_call} {params.readcounts} –output-basename {params.filter_prefix}")
-		shell("mv {params.filter_pass} {params.temp_file}")
-		shell(" bgzip {params.temp_file} ")
-                shell(" tabix -f -p vcf {params.temp_file2} ")
-                shell(" bcftools annotate --rename-chrs {input.rename_file} {params.temp_file2} > {output}")		
-		shell("rm temp*")
+		shell("perl {params.filter_script} {params.temp_unfiltered} {params.readcounts} –output-basename {params.filter_prefix}")
+		shell("mv outfile.pass {params.temp_file}")
+		shell("mv outfile.fail {params.filter_fails}")
+		shell("bgzip {params.temp_file} ")
+                shell("tabix -f -p vcf {params.temp_file2} ")
+                shell("bcftools annotate --rename-chrs {input.rename_file} {params.temp_file2} > {output}")		
+		shell("rm {params.temps}")
 		
 rule varscan_call_unfiltered:
 	input: 
@@ -258,14 +264,15 @@ rule varscan_call_unfiltered:
 		"{outdir}/sample{ii}/vcf/varscan_unfiltered.vcf"
 	params:
 		temp_file = "{outdir}/sample{ii}/vcf/temp.vcf",
-		temp_file2 = "{outdir}/sample{ii}/vcf/temp.vcf.gz"
+		temp_file2 = "{outdir}/sample{ii}/vcf/temp.vcf.gz",
+		temps = "{outdir}/sample{ii}/vcf/temp*"
 	run:
 		shell("samtools mpileup -f {input[0]} {input[1]} | varscan mpileup2snp - --output-vcf 1 --min-coverage 10 --min-var-freq 0.10 --p-value 0.10 > {params.temp_file}")
 		shell(" bgzip {params.temp_file} ")
 		shell(" tabix -f -p vcf {params.temp_file2} ")
 		shell(" bcftools annotate --rename-chrs {input.rename_file} {params.temp_file2} > {output}")
 		shell(" rm {params.temp_file2}")
-		shell("rm temp*")
+		shell("rm {params.temps}")
 		
 rule freebayes_call:
 	input: 
@@ -276,12 +283,15 @@ rule freebayes_call:
 		"{outdir}/sample{ii}/vcf/freebayes.vcf"
 	params:
 		temp_file = "{outdir}/sample{ii}/vcf/temp.vcf",
-		temp_file2 = "{outdir}/sample{ii}/vcf/temp.vcf.gz"
+		temp_file2 = "{outdir}/sample{ii}/vcf/temp.vcf.gz",
+		temps = "{outdir}/sample{ii}/vcf/temp*"
 	run:
 		shell("freebayes -f {input[0]} -p 1 --pooled-continuous -0 {input[1]} > {params.temp_file}")
-		shell(" bgzip {params.temp_file} | tabix -f -p vcf {params.temp_file2} | bcftools annotate --rename-chrs {input.rename_file} {params.temp_file2} > {output}")
+		shell(" bgzip {params.temp_file}")
+		shell("tabix -f -p vcf {params.temp_file2} ")
+		shell("bcftools annotate --rename-chrs {input.rename_file} {params.temp_file2} > {output}")
 		shell(" rm {params.temp_file2}")
-		shell("rm temp*")
+		shell("rm {params.temps}")
 		
 rule freebayes_call_unfiltered:
 	input: 
@@ -292,12 +302,15 @@ rule freebayes_call_unfiltered:
 		"{outdir}/sample{ii}/vcf/freebayes_unfiltered.vcf"
 	params:
 		temp_file = "{outdir}/sample{ii}/vcf/temp.vcf",
-		temp_file2 = "{outdir}/sample{ii}/vcf/temp.vcf.gz"
+		temp_file2 = "{outdir}/sample{ii}/vcf/temp.vcf.gz",
+		temps = "{outdir}/sample{ii}/vcf/temp*"
 	run:
 		shell("freebayes -f {input[0]} -p 1 --pooled-continuous {input[1]} > {params.temp_file}")
-		shell(" bgzip {params.temp_file} | tabix -f -p vcf {params.temp_file2} | bcftools annotate --rename-chrs {input.rename_file} {params.temp_file2} > {output}")
+		shell(" bgzip {params.temp_file} ")
+		shell(" tabix -f -p vcf {params.temp_file2} ")
+		shell(" bcftools annotate --rename-chrs {input.rename_file} {params.temp_file2} > {output}")
 		shell(" rm {params.temp_file2}")
-		shell("rm temp*")
+		shell("rm {params.temps}")
 
 rule seq2msa:
 	input:
@@ -325,11 +338,11 @@ rule comparison_vcfs:
 	output:
 		temp("{outdir}/sample{ii}/vcf/comparison/{caller}_seq_{jj}.diff.sites_in_files")
 	params:
-		out_prefix = "{caller}_seq_{jj}"
+		out_prefix = "{outdir}/sample{ii}/vcf/comparison/{caller}_seq_{jj}"
 	conda:
 		"envs/vcftools.yaml"
 	shell:
-		"vcftools --vcf {input[0]} --diff {input[1]} --diff-site --out params.out_prefix"
+		"vcftools --vcf {input[0]} --diff {input[1]} --diff-site --out {params.out_prefix}"
 		
 rule validate:
 	input:

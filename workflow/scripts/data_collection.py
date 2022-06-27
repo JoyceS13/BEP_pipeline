@@ -9,10 +9,10 @@ import pandas as pd
 import argparse
 import os
 
-def data_collection(csvs, caller):
+def data_collection(csvs, caller,out_dir):
     df = pd.DataFrame()
     for file in csvs:
-        df.concat( pd.read_csv(file, sep='\t'))
+        df.append( pd.read_csv(file, sep='\t'))
         
     df.to_csv(open(os.path.join("{}/{}".format(os.getcwd(),out_dir),"results_{}.csv".format(caller)),"w"),index=False)
     
