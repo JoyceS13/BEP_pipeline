@@ -12,7 +12,14 @@ import os
 def data_collection(csvs, caller,out_dir):
     df = pd.DataFrame()
     for file in csvs:
-        df.append( pd.read_csv(file, sep='\t'))
+        if df.empty:
+            df =  pd.read_csv(file, index_col = 0,header=0)
+            #print(df)
+        else: 
+            temp = pd.read_csv(file, index_col=0,header=0)
+            print(temp)
+            df = df.append(temp)
+            #print(df)
         
     df.to_csv(open(os.path.join("{}/{}".format(os.getcwd(),out_dir),"results_{}.csv".format(caller)),"w"),index=False)
     
