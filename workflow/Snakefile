@@ -247,7 +247,7 @@ rule varscan_call_extra_filter:
 		shell("perl {input.filter_script} {output.temp_unfiltered} {output.readcounts} –output-basename {params.filter_prefix}")
 		shell("mv outfile.pass {output.temp_file}")
 		shell("mv outfile.fail {output.filter_fails}")
-		shell("bgzip -c {output.temp_file} ")
+		shell("bgzip -c {output.temp_file} >{output.temp_file2} ")
                 shell("tabix -f -p vcf {output.temp_file2} ")
                 shell("bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} > {output[0]}")		
 		
@@ -278,7 +278,7 @@ rule freebayes_call:
 		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp6.vcf.gz")
 	run:
 		shell("freebayes -f {input[0]} -p 1 --pooled-continuous -0 {input[1]} > {output.temp_file}")
-		shell(" bgzip -c {output.temp_file}")
+		shell("bgzip -c {output.temp_file} >{output.temp_file2}")
 		shell("tabix -f -p vcf {output.temp_file2} ")
 		shell("bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} > {output[0]}")
 		
@@ -293,7 +293,7 @@ rule freebayes_call_unfiltered:
 		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp7.vcf.gz")
 	run:
 		shell("freebayes -f {input[0]} -p 1 --pooled-continuous {input[1]} > {output.temp_file}")
-		shell(" bgzip -c {output.temp_file} ")
+		shell(" bgzip -c {output.temp_file} > {output.temp_file2}")
 		shell(" tabix -f -p vcf {output.temp_file2} ")
 		shell(" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} > {output[0]}")
 
