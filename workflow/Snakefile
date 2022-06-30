@@ -19,6 +19,7 @@ proportions = config["props"]
 rename_file = config["rename_file"]
 varscan_filter = config["varscan_filter"]
 caller_ar = config["callers"]
+experiment_name = config["experiment_name"]
 
 def create_names(proportions):
         props = []
@@ -32,7 +33,7 @@ props = create_names(proportions)
 pop_range = range(0,len(proportions[0]))
 pop_size = len(pop_range)
 
-#uncomment one line to target specific rule
+#uncomment one line to target specific rule (intermediate rule commands might be outdated)
 rule all_test:
 	input:
 		#expand("output/test/sample{ii}/seq_{jj}.fasta", ii = repeat_ar,jj = pop_size_ar) #mutate
@@ -46,8 +47,8 @@ rule all_test:
 		#expand("output/test/sample{ii}/vcf/true_vcf_seq{jj}.vcf", ii = repeat_ar, jj = pop_size_ar) #msa2vcf
 		#expand("output/test/sample{ii}/vcf/comparison/{caller}_seq{jj}.diff.sites_in_files", ii = repeat_ar, caller = caller_ar, jj = pop_size_ar)
 		#expand("output/test/sample{ii}/analysis/analysis_{caller}.csv", ii = repeat_ar, caller = caller_ar)
-		expand("output/proportions/{fcov}fcov/{props}props/results_{caller}.csv", \
-		       fcov = f_cov, props = props, caller = caller_ar)
+		expand("{experiment_name}/{fcov}fcov/{props}props/results_{caller}.csv", \
+		       experiment_name = experiment_name, fcov = f_cov, props = props, caller = caller_ar)
 		
 #get correct parameters to run	
 def get_fcov(props, outdir, proportions, f_cov, jj):
@@ -139,8 +140,16 @@ rule gatk_call:
 	shell:
 		"gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy {params.ploidy} -O {output.temp_file} ;"
 		"bcftools annotate --rename-chrs {input.rename_file} {output.temp_file} > {output.temp_unfiltered} ;"
-		"gatk VariantFiltration -V {output.temp_unfiltered} -filter {params.QD:q} --filter-name QD2 -filter {params.QUAL:q} --filter-name QUAL30 -filter {params.SOR:q} --filter-name SOR3 -filter {params.FS:q} --filter-name FS60 -filter {params.MQ:q} --filter-name MQ40 -filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  -filter {params.RPRS:q} --filter-name ReadPosRankSum-8 -O {output[0]}"
-		
+		"gatk VariantFiltration -V {output.temp_unfiltered} "
+			"-filter {params.QD:q} --filter-name QD2 "
+			"-filter {params.QUAL:q} --filter-name QUAL30 "
+			"-filter {params.SOR:q} --filter-name SOR3 "
+			"-filter {params.FS:q} --filter-name FS60 "
+			"-filter {params.MQ:q} --filter-name MQ40 "
+			"-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  "
+			"-filter {params.RPRS:q} --filter-name ReadPosRankSum-8 " 
+		      	"-O {output[0]}"
+
 rule gatk_call_upper:
 	input: 
 		reference,
@@ -209,10 +218,8 @@ rule gatk_unfiltered_call:
 	output:
 		"{outdir}/sample{ii}/vcf/gatk_unfiltered.vcf",
 		temp_file = temp("{outdir}/sample{ii}/vcf/temp_gatk.vcf")
-	params:
-		ploidy = pop_size
 	run:
-		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy {params.ploidy} -O {output.temp_file}")	
+		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 5 -O {output.temp_file}")	
 		shell(" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file} > {output[0]}")		
 
 rule varscan_call_extra_filter:
@@ -269,7 +276,8 @@ rule freebayes_call:
 		temp_file = temp("{outdir}/sample{ii}/vcf/temp6.vcf"),
 		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp6.vcf.gz")
 	run:
-		shell("freebayes -f {input[0]} -p 1 --pooled-continuous -0 {input[1]} > {output.temp_file}")
+		#shell("freebayes -f {input[0]} -p 1 --pooled-continuous -0 {input[1]} > {output.temp_file}")
+		shell("freebayes -f {input[0]} -F 0.01 -C 1 --pooled-continuous -0 {input[1]} > {output.temp_file}")
 		shell("bgzip -c {output.temp_file} >{output.temp_file2}")
 		shell("tabix -f -p vcf {output.temp_file2} ")
 		shell("bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} > {output[0]}")
@@ -284,7 +292,8 @@ rule freebayes_call_unfiltered:
 		temp_file = temp("{outdir}/sample{ii}/vcf/temp7.vcf"),
 		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp7.vcf.gz")
 	run:
-		shell("freebayes -f {input[0]} -p 1 --pooled-continuous {input[1]} > {output.temp_file}")
+		#shell("freebayes -f {input[0]} -p 1 --pooled-continuous {input[1]} > {output.temp_file}")
+		shell("freebayes -f {input[0]} -F 0.01 -C 1 --pooled-continuous {input[1]} > {output.temp_file}")
 		shell(" bgzip -c {output.temp_file} > {output.temp_file2}")
 		shell(" tabix -f -p vcf {output.temp_file2} ")
 		shell(" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} > {output[0]}")
