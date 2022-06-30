@@ -49,6 +49,8 @@ rule all_test:
 		#expand("output/test/sample{ii}/analysis/analysis_{caller}.csv", ii = repeat_ar, caller = caller_ar)
 		expand("{experiment_name}/{fcov}fcov/{props}props/results_{caller}.csv", \
 		       experiment_name = experiment_name, fcov = f_cov, props = props, caller = caller_ar)
+		expand("{experiment_name}/results_target/{fcov}fcov_{props}props_{caller}_s{ii}.csv", \
+		       experiment_name = experiment_name, fcov = f_cov, props = props, caller = caller_ar, ii = pop_range)
 		
 #get correct parameters to run	
 def get_fcov(props, outdir, proportions, f_cov, jj):
@@ -357,4 +359,29 @@ rule data_collection:
 		out_dir = "{outdir}"
 	script:
 		"scripts/data_collection.py"
-
+		
+rule validate_target:
+	input:
+		comparison_vcfs = expand("{{outdir}}/sample{{ii}}/vcf/comparison/{{caller}}_seq_{jj}.diff.sites_in_files", jj = pop_range),
+		reference = reference
+	output:
+		expand("{{outdir}}/sample{{ii}}/analysis_target/analysis_target_{{caller}}_s{jj}.csv", jj = pop_range)
+	params:
+		sample_index = "{ii}",
+		caller = "{caller}",
+		out_dir = "{outdir}/sample{ii}/analysis_target"
+	conda:
+		"envs/validate_env.yaml"
+	script:
+		"scripts/validate_target.py"
+		
+rule data_collection_target:
+	input:
+		expand("{{experiment_name}}/{{fcov}}fcov/{{props}}props/sample{ii}/analysis/analysis_target_{{caller}}_s{{jj}}.csv", ii = repeat_ar)
+	output:
+		"{experiment_name}/results_target/{fcov}fcov_{props}props_{caller}_s{jj}.csv"
+	params:
+		out_dir = lambda wildcards: "{wildcards.experiment_name}/results_target",
+		file_name = lambda wildcards: "{wildcards.fcov}fcov_{wildcards.props}props_{wildcards.caller}_s{wildcards.jj}.csv"
+	script:
+		"scripts/data_collection_target.py"
