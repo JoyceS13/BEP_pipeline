@@ -84,18 +84,18 @@ def validate_target(target_vcf, target_index, comparison_vcfs, caller, reference
 
     df = pd.DataFrame(dict, index = [str(sample_index)])
     
-    df.to_csv(open(outdir+"/","analysis_target_{}_s{}.csv".format(caller,target_index),"w"))
+    df.to_csv(open("{}/analysis_target_{}_s{}.csv".format(outdir,caller,target_index),"w"))
     
     return df
     
 if __name__ == '__main__':
     
     ap = argparse.ArgumentParser(description = 'validate validates the called vcfs compared to the vcfs made from the true sequences.')
-    ap.add_argument("-c","--comparison_vcfs", metavar = 'vcfs',  nargs = '*', type=str,  \
+    ap.add_argument("comparison_vcfs", metavar = 'vcfs',  nargs = '*', type=str,  \
                     help="vcfs with all snps from the called and true sequences compared")
     ap.add_argument("-r","--reference", metavar='ref',  type=str,    \
                     help='fasta file of reference sequence')
-    ap.add_argument("-i","--sample-index", metavar='sidx',  type=int,    \
+    ap.add_argument("-i","--sampleindex", metavar='sidx',  type=int,    \
                     help='index of sample')
     ap.add_argument("-c","--caller", metavar='caller',  type=str,    \
                     help='name of variant caller used')
@@ -113,9 +113,10 @@ if __name__ == '__main__':
         args = vars(ap.parse_args())
         vcfs = args['comparison_vcfs']
         ref = args['reference']
-        sample_idx = args['sample-index']
+        sample_idx = args['sampleindex']
         caller = args['caller']
         out_dir = args['directory']
     
-    for ii,file in enumerate(vcfs.sort()):
+    vcfs.sort()
+    for ii,file in enumerate(vcfs):
         validate_target(file, ii, vcfs, caller, ref, sample_idx, out_dir)
