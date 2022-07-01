@@ -1,0 +1,12 @@
+#parameters to make graph to research the effect of different proportions on the accuracy of variant calling
+reference: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/IMBvariant/reference/chromosomes/CEN.PK113-7D_chr01_pilon.fa"
+name: "chr1"
+mutations: 200
+repeats: 50
+props: [[0.90,0.05,0.05],[0.85,0.10,0.05],[0.33,0.33,0.33]]
+f_cov: [50,100,200,500]
+working_dir: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/output"
+rename_file: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/rename_chr.txt"
+varscan_filter: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/workflow/scripts/fpfilter.pl"
+callers: ['gatk','freebayes','gatk_upper','gatk_lower','gatk_unfiltered','varscan','freebayes_unfiltered']
+experiment_name: "ploidy3"
