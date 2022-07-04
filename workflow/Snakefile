@@ -112,11 +112,11 @@ rule bwa_map:
 	  	"{outdir}/sample{ii}/aln.srt.bam",
 		"{outdir}/sample{ii}/aln.srt.bam.bai",
 		sam = temp("{outdir}/sample{ii}/aln.sam")
-	run:
-	  	shell("bwa mem {input} >{output.sam}")
-		shell("samtools addreplacerg -r ID:dummy -r LB:dummy -r SM:dummy -r PL:ILLUMINA {output.sam} \
-			| samtools view -1 - | samtools sort - > {output[0]}")
-		shell("samtools index {output[0]}")
+	shell:
+	  	"bwa mem {input} >{output.sam};"
+		"samtools addreplacerg -r ID:dummy -r LB:dummy -r SM:dummy -r PL:ILLUMINA {output.sam} "
+			"| samtools view -1 - | samtools sort - > {output[0]};"
+		"samtools index {output[0]}"
 		#shell("gatk CreateSequenceDictionary -R {input[0]}")
 
 #after creation some vcf headers and/or chromosome names are adjusted
@@ -151,17 +151,14 @@ rule gatk_call:
 			"-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  "
 			"-filter {params.RPRS:q} --filter-name ReadPosRankSum-8 " 
 		      	"-O {output[0]};"
+		"vcftools --remove-filtered-all --vcf {output[0]}"
 		"vcfallelicprimitives -kg {output[0]} > {output[0]}"
 
 rule gatk_call_upper:
 	input: 
-		reference,
-		"{outdir}/sample{ii}/aln.srt.bam",
-		rename_file = rename_file
+		"{outdir}/sample{ii}/vcf/gatk_unfiltered.vcf"
 	output:
-		"{outdir}/sample{ii}/vcf/gatk_upper.vcf",
-		temp_file = temp("{outdir}/sample{ii}/vcf/temp2_gatk.vcf"),
-		temp_unfiltered = temp("{outdir}/sample{ii}/vcf/temp2_unfiltered_gatk.vcf")
+		"{outdir}/sample{ii}/vcf/gatk_upper.vcf"
 	params:
 		QD = "QD<2.0",
 		QUAL = "QUAL<30.0",
@@ -171,9 +168,7 @@ rule gatk_call_upper:
 		MQRankSum = "MQRankSum<-12.5",
 		RPRS = "ReadPosRankSum<-8.0",
 	shell:
-		"gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 5 -O {output.temp_file} ;"
-		"bcftools annotate --rename-chrs {input.rename_file} {output.temp_file} > {output.temp_unfiltered} ;"
-		"gatk VariantFiltration -V {output.temp_unfiltered} "
+		"gatk VariantFiltration -V {input} "
 			"-filter {params.QD:q} --filter-name QD2 "
 			"-filter {params.QUAL:q} --filter-name QUAL30 "
 			"-filter {params.SOR:q} --filter-name SOR3 "
@@ -181,8 +176,9 @@ rule gatk_call_upper:
 			"-filter {params.MQ:q} --filter-name MQ40 "
 			"-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  "
 			"-filter {params.RPRS:q} --filter-name ReadPosRankSum-8 " 
-		      	"-O {output[0]};"
-		"vcfallelicprimitives -kg {output[0]} > {output[0]}"
+		      	"-O {output};"
+		"vcftools --remove-filtered-all --vcf {output}"
+		"vcfallelicprimitives -kg {output} > {output}"
 		
 rule gatk_call_lower:
 	input: 
@@ -213,6 +209,7 @@ rule gatk_call_lower:
 			"-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  "
 			"-filter {params.RPRS:q} --filter-name ReadPosRankSum-8 " 
 		      	"-O {output[0]};"
+		"vcftools --remove-filtered-all --vcf {output[0]}"
 		"vcfallelicprimitives -kg {output[0]} > {output[0]}"
 		
 rule gatk_call_unfiltered:
@@ -250,12 +247,12 @@ rule varscan_call_unfiltered:
 		"{outdir}/sample{ii}/vcf/varscan_unfiltered.vcf",
 		temp_file = temp("{outdir}/sample{ii}/vcf/temp5.vcf"),
 		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp5.vcf.gz"),
-	run:
-		shell("samtools mpileup -f -B {input[0]} {input[1]} \
-			| varscan mpileup2snp - --output-vcf 1 --min-coverage 5 --min-var-freq 0.01 --p-value 0.10 > {output.temp_file}")
-		shell(" bgzip -c {output.temp_file} > {output.temp_file2}")
-		shell(" tabix -f -p vcf {output.temp_file2} ")
-		shell(" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} | vcfallelicprimitives -kg > {output[0]}")
+	shell:
+		"samtools mpileup -f -B {input[0]} {input[1]} "
+			"| varscan mpileup2snp - --output-vcf 1 --min-coverage 5 --min-var-freq 0.01 --p-value 0.10 > {output.temp_file};"
+		" bgzip -c {output.temp_file} > {output.temp_file2};"
+		" tabix -f -p vcf {output.temp_file2} ;"
+		" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} | vcfallelicprimitives -kg > {output[0]}"
 		
 rule freebayes_call:
 	input: 
@@ -282,12 +279,11 @@ rule freebayes_call_unfiltered:
 		"{outdir}/sample{ii}/vcf/freebayes_unfiltered.vcf",
 		temp_file = temp("{outdir}/sample{ii}/vcf/temp7.vcf"),
 		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp7.vcf.gz")
-	run:
-		#shell("freebayes -f {input[0]} -p 1 --pooled-continuous {input[1]} > {output.temp_file}")
-		shell("freebayes -f {input[0]} -F 0.01 -C 1 --pooled-continuous -0 {input[1]} > {output.temp_file}")
-		shell(" bgzip -c {output.temp_file} > {output.temp_file2}")
-		shell(" tabix -f -p vcf {output.temp_file2} ")
-		shell(" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} | vcfallelicprimitives -kg > {output[0]}")
+	shell:
+		"freebayes -f {input[0]} -F 0.01 -C 1 --pooled-continuous -0 {input[1]} > {output.temp_file};"
+		" bgzip -c {output.temp_file} > {output.temp_file2};"
+		" tabix -f -p vcf {output.temp_file2} ;"
+		" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} | vcfallelicprimitives -kg > {output[0]}"
 
 rule seq2msa:
 	input:
