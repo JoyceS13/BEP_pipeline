@@ -265,9 +265,11 @@ rule freebayes_call:
 		"{outdir}/sample{ii}/vcf/freebayes.vcf",
 		temp_file = temp("{outdir}/sample{ii}/vcf/temp6.vcf"),
 		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp6.vcf.gz")
-	run:
-		"vcffilter -f "QUAL > 20" {input.unfiltered_vcf} > {output.temp_file};"
-		"bgzip -c {output.temp_file} >{output.temp_file2};"
+	params:
+		QUAL = "QUAL>20"
+	shell:
+		"vcffilter -f {params.QUAL} {input.unfiltered_vcf} > {output.temp_file};"
+		"bgzip -c {output.temp_file} > {output.temp_file2};"
 		"tabix -f -p vcf {output.temp_file2};"
 		"bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} | vcfallelicprimitives -kg > {output[0]}"
 		
