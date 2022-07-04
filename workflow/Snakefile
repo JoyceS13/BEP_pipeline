@@ -91,8 +91,8 @@ rule make_samples:
 		out_prefix ="{outdir}/sample{ii}/seq_{jj}_" ,
 		fcov = lambda wildcards: get_fcov(props, wildcards.outdir, proportions, f_cov, wildcards.jj),
 		out_dir = "{outdir}/sample{ii}"
-	run:
-		shell("art_illumina -na -i {input} -p -l 150 -ss HS25 -f {params.fcov} -m 200 -s 10 -o {params.out_prefix}")
+	shell:
+		"art_illumina -na -i {input} -p -l 150 -ss HS25 -f {params.fcov} -m 200 -s 10 -o {params.out_prefix}"
 
 #group reads such that a certain population size is simulated 
 rule group_reads:
@@ -150,7 +150,8 @@ rule gatk_call:
 			"-filter {params.MQ:q} --filter-name MQ40 "
 			"-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  "
 			"-filter {params.RPRS:q} --filter-name ReadPosRankSum-8 " 
-		      	"-O {output[0]}"
+		      	"-O {output[0]};"
+		"vcfallelicprimitives -kg {output[0]} > {output[0]}"
 
 rule gatk_call_upper:
 	input: 
@@ -180,7 +181,8 @@ rule gatk_call_upper:
 			"-filter {params.MQ:q} --filter-name MQ40 "
 			"-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  "
 			"-filter {params.RPRS:q} --filter-name ReadPosRankSum-8 " 
-		      	"-O {output[0]}"
+		      	"-O {output[0]};"
+		"vcfallelicprimitives -kg {output[0]} > {output[0]}"
 		
 rule gatk_call_lower:
 	input: 
@@ -210,9 +212,10 @@ rule gatk_call_lower:
 			"-filter {params.MQ:q} --filter-name MQ40 "
 			"-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  "
 			"-filter {params.RPRS:q} --filter-name ReadPosRankSum-8 " 
-		      	"-O {output[0]}"
+		      	"-O {output[0]};"
+		"vcfallelicprimitives -kg {output[0]} > {output[0]}"
 		
-rule gatk_unfiltered_call:
+rule gatk_call_unfiltered:
 	input: 
 		reference,
 		"{outdir}/sample{ii}/aln.srt.bam",
@@ -220,69 +223,53 @@ rule gatk_unfiltered_call:
 	output:
 		"{outdir}/sample{ii}/vcf/gatk_unfiltered.vcf",
 		temp_file = temp("{outdir}/sample{ii}/vcf/temp_gatk.vcf")
-	run:
-		shell("gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 5 -O {output.temp_file}")	
-		shell(" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file} > {output[0]}")		
+	shell:
+		"gatk HaplotypeCaller -R {input[0]} -I {input[1]} -ploidy 5 -O {output.temp_file};"	
+		" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file} | vcfallelicprimitives -kg > {output[0]}"		
 
-rule varscan_call_extra_filter:
+rule varscan_call:
 	input: 
 		unfiltered_vcf = "{outdir}/sample{ii}/vcf/temp5.vcf",
-		reference = reference,
-		bam = "{outdir}/sample{ii}/aln.srt.bam",
-		rename_file = rename_file,
-		filter_script = varscan_filter
+		rename_file = rename_file
 	output:
-		"{outdir}/sample{ii}/vcf/varscan_extra_filter.vcf",
+		"{outdir}/sample{ii}/vcf/varscan.vcf",
 		temp_file = temp("{outdir}/sample{ii}/vcf/temp4.vcf"),
-		temp_unfiltered = temp("{outdir}/sample{ii}/vcf/temp4_unfiltered.vcf"),
-		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp4.vcf.gz"),
-		readcounts = temp("{outdir}/sample{ii}/vcf/temp4.variant.readcounts"),
-		bed = temp("{outdir}/sample{ii}/vcf/temp4.bed"),
-		filter_pass = "{outdir}/sample{ii}/vcf/varscan_variants.filter.pass",
-		filter_fails = "{outdir}/sample{ii}/vcf/varscan.vcf.fail"
-	params:
-		filter_prefix = "{outdir}/sample{ii}/vcf/varscan_variants.filter",
-	run:		
-		shell("convert2bed -i vcf -o bed < {input.unfiltered_vcf} > {output.bed}")
-		shell("bam-readcount -q 1 -b 20 -f {output.reference} -l {output.bed} {input.bam} > {output.readcounts}")
-		shell("perl {input.filter_script} {output.temp_unfiltered} {output.readcounts} –output-basename {params.filter_prefix}")
-		shell("mv outfile.pass {output.temp_file}")
-		shell("mv outfile.fail {output.filter_fails}")
-		shell("bgzip -c {output.temp_file} >{output.temp_file2} ")
-                shell("tabix -f -p vcf {output.temp_file2} ")
-                shell("bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} > {output[0]}")		
+		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp4.vcf.gz")
+	shell:		
+		"varscan filter input.unfiltered_vcf > {output.temp_file};"
+		"bgzip -c {output.temp_file} > {output.temp_file2};"
+		" tabix -f -p vcf {output.temp_file2};"
+		" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} | vcfallelicprimitives -kg > {output[0]}"
 		
-rule varscan_call:
+rule varscan_call_unfiltered:
 	input: 
 		reference,
 		"{outdir}/sample{ii}/aln.srt.bam",
 		rename_file = rename_file
 	output:
-		"{outdir}/sample{ii}/vcf/varscan.vcf",
+		"{outdir}/sample{ii}/vcf/varscan_unfiltered.vcf",
 		temp_file = temp("{outdir}/sample{ii}/vcf/temp5.vcf"),
 		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp5.vcf.gz"),
 	run:
-		shell("samtools mpileup -f {input[0]} {input[1]} \
-			| varscan mpileup2snp - --output-vcf 1 --min-coverage 10 --min-var-freq 0.10 --p-value 0.10 > {output.temp_file}")
+		shell("samtools mpileup -f -B {input[0]} {input[1]} \
+			| varscan mpileup2snp - --output-vcf 1 --min-coverage 5 --min-var-freq 0.01 --p-value 0.10 > {output.temp_file}")
 		shell(" bgzip -c {output.temp_file} > {output.temp_file2}")
 		shell(" tabix -f -p vcf {output.temp_file2} ")
-		shell(" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} > {output[0]}")
+		shell(" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} | vcfallelicprimitives -kg > {output[0]}")
 		
 rule freebayes_call:
 	input: 
-		reference,
-		"{outdir}/sample{ii}/aln.srt.bam",
+		unfiltered_vcf = "{outdir}/sample{ii}/vcf/temp7.vcf",
 		rename_file = rename_file
 	output:
 		"{outdir}/sample{ii}/vcf/freebayes.vcf",
 		temp_file = temp("{outdir}/sample{ii}/vcf/temp6.vcf"),
 		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp6.vcf.gz")
 	run:
-		#shell("freebayes -f {input[0]} -p 1 --pooled-continuous -0 {input[1]} > {output.temp_file}")
-		shell("freebayes -f {input[0]} -F 0.01 -C 1 --pooled-continuous -0 {input[1]} > {output.temp_file}")
-		shell("bgzip -c {output.temp_file} >{output.temp_file2}")
-		shell("tabix -f -p vcf {output.temp_file2} ")
-		shell("bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} > {output[0]}")
+		"vcffilter -f "QUAL > 20" {input.unfiltered_vcf} > {output.temp_file};"
+		"bgzip -c {output.temp_file} >{output.temp_file2};"
+		"tabix -f -p vcf {output.temp_file2};"
+		"bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} | vcfallelicprimitives -kg > {output[0]}"
 		
 rule freebayes_call_unfiltered:
 	input: 
@@ -295,10 +282,10 @@ rule freebayes_call_unfiltered:
 		temp_file2 = temp("{outdir}/sample{ii}/vcf/temp7.vcf.gz")
 	run:
 		#shell("freebayes -f {input[0]} -p 1 --pooled-continuous {input[1]} > {output.temp_file}")
-		shell("freebayes -f {input[0]} -F 0.01 -C 1 --pooled-continuous {input[1]} > {output.temp_file}")
+		shell("freebayes -f {input[0]} -F 0.01 -C 1 --pooled-continuous -0 {input[1]} > {output.temp_file}")
 		shell(" bgzip -c {output.temp_file} > {output.temp_file2}")
 		shell(" tabix -f -p vcf {output.temp_file2} ")
-		shell(" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} > {output[0]}")
+		shell(" bcftools annotate --rename-chrs {input.rename_file} {output.temp_file2} | vcfallelicprimitives -kg > {output[0]}")
 
 rule seq2msa:
 	input:
