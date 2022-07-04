@@ -1,0 +1,18 @@
+#!/bin/sh
+#SBATCH --partition=general
+#SBATCH --qos=medium
+#SBATCH --time=10:00:00
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=40000
+#SBATCH --mail-type=END
+
+bash
+cd output
+
+#snakemake --forceall --dag -s BEP_pipeline/workflow/Snakefile| dot -Tpdf > dag_proportions.pdf
+#snakemake --forceall --rulegraph -s ../BEP_pipeline/workflow/Snakefile| dot -Tpdf > dag_rulegraph.pdf
+snakemake --cores 24 -s ../BEP_pipeline/workflow/Snakefile --resources mem_mb=20000 \
+  --configfile /tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/proportions2.yaml --unlock
+snakemake --cores 24 -s ../BEP_pipeline/workflow/Snakefile --resources mem_mb=40000 --rerun-incomplete \
+  --configfile /tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/proportions2.yaml
