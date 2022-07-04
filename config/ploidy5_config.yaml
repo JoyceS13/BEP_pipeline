@@ -9,4 +9,4 @@ working_dir: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/output"
 rename_file: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/rename_chr.txt"
 varscan_filter: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/workflow/scripts/fpfilter.pl"
 callers: ['gatk','freebayes','gatk_upper','gatk_unfiltered','varscan','freebayes_unfiltered']
-experiment_name: "ploidy5"
+experiment_name: "ploidy_5"
