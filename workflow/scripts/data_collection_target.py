@@ -21,7 +21,7 @@ def data_collection(csvs, file_name, out_dir):
             df = df.append(temp)
             #print(df)
         
-    df.to_csv(open(out_dir,file_name,"w"))
+    df.to_csv(open(out_dir+"/"+file_name,"w"))
     
     
 if __name__ == '__main__':
