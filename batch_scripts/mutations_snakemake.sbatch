@@ -23,18 +23,18 @@ snakemake --cores 16 -s ../BEP_pipeline/workflow/Snakefile \
   --resources mem_mb=20000 \
   --configfile /tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/mutations_config.yaml \
   --config mutations=20 \
-  --config experiment_name=mutations_20
+  --config experiment_name=mutations_20 --rerun-incomplete
   
-  snakemake --cores 16 -s ../BEP_pipeline/workflow/Snakefile \
-  --resources mem_mb=20000 \
-  --configfile /tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/mutations_config.yaml \
-  --config mutations=2000 \
-  --config experiment_name=mutations_2000 \
-  --unlock
+#  snakemake --cores 16 -s ../BEP_pipeline/workflow/Snakefile \
+#  --resources mem_mb=20000 \
+#  --configfile /tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/mutations_config.yaml \
+#  --config mutations=2000 \
+#  --config experiment_name=mutations_2000 \
+#  --unlock
  
-snakemake --cores 16 -s ../BEP_pipeline/workflow/Snakefile \
-  --resources mem_mb=20000 \
-  --configfile /tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/mutations_config.yaml \
-  --config mutations=2000 \
-  --config experiment_name=mutations_2000 \
-  --rerun-incomplete
+#snakemake --cores 16 -s ../BEP_pipeline/workflow/Snakefile \
+#  --resources mem_mb=20000 \
+#  --configfile /tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/mutations_config.yaml \
+#  --config mutations=2000 \
+#  --config experiment_name=mutations_2000 \
+#  --rerun-incomplete

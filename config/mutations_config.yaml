@@ -2,11 +2,11 @@
 reference: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/IMBvariant/reference/chromosomes/CEN.PK113-7D_chr01_pilon.fa"
 name: "chr1"
 mutations: 200 #change to 20 or 2000 using the config flag
-repeats: 50
+repeats: 30
 props: [[0.5,0.5],[0.8,0.2],[0.9,0.1],[0.98,0.02]]
 f_cov: [20,50,100]
 working_dir: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/output"
 rename_file: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/rename_chr.txt"
 varscan_filter: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/workflow/scripts/fpfilter.pl"
-callers: ['gatk','freebayes','gatk_upper','gatk_unfiltered','varscan','freebayes_unfiltered']
+callers: ['gatk','gatk_upper','gatk_unfiltered','varscan','freebayes','freebayes_unfiltered']
 experiment_name: "mutations200" #change to mutations20 or mutations2000 using the config flag

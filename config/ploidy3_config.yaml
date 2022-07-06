@@ -8,5 +8,5 @@ f_cov: [20,50,100,200]
 working_dir: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/output"
 rename_file: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/config/rename_chr.txt"
 varscan_filter: "/tudelft.net/staff-umbrella/YeastVariantCalling/wsung/BEP_pipeline/workflow/scripts/fpfilter.pl"
-callers: ['gatk','freebayes','gatk_upper','gatk_unfiltered','varscan','freebayes_unfiltered']
+callers: ['gatk','gatk_upper','gatk_unfiltered','varscan','freebayes','freebayes_unfiltered']
 experiment_name: "ploidy_3"
