@@ -151,7 +151,14 @@ rule gatk_call:
 			"-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  "
 			"-filter {params.RPRS:q} --filter-name ReadPosRankSum-8 " 
 		      	"-O {output[0]};"
-		"vcftools --remove-filtered-all --vcf {output[0]}"
+		"vcftools --remove-filtered QD2 "
+			"--remove-filtered QUAL30 "
+			"--remove-filtered SOR3 "
+			"--remove-filtered FS60 "
+			"--remove-filtered MQ40 "
+			"--remove-filtered MQRankSum-12.5 "
+			"--remove-filtered ReadPosRankSum-8 "
+			"--vcf {output[0]};"
 		"vcfallelicprimitives -kg {output[0]} > {output[0]}"
 
 rule gatk_call_upper:
@@ -177,7 +184,14 @@ rule gatk_call_upper:
 			"-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  "
 			"-filter {params.RPRS:q} --filter-name ReadPosRankSum-8 " 
 		      	"-O {output};"
-		"vcftools --remove-filtered-all --vcf {output}"
+		"vcftools --remove-filtered QD2 "
+			"--remove-filtered QUAL30 "
+			"--remove-filtered SOR3 "
+			"--remove-filtered FS60 "
+			"--remove-filtered MQ40 "
+			"--remove-filtered MQRankSum-12.5 "
+			"--remove-filtered ReadPosRankSum-8 "
+			"--vcf {output[0]};"
 		"vcfallelicprimitives -kg {output} > {output}"
 		
 rule gatk_call_lower:
@@ -209,7 +223,14 @@ rule gatk_call_lower:
 			"-filter {params.MQRankSum:q} --filter-name MQRankSum-12.5  "
 			"-filter {params.RPRS:q} --filter-name ReadPosRankSum-8 " 
 		      	"-O {output[0]};"
-		"vcftools --remove-filtered-all --vcf {output[0]}"
+		"vcftools --remove-filtered QD2 "
+			"--remove-filtered QUAL30 "
+			"--remove-filtered SOR3 "
+			"--remove-filtered FS60 "
+			"--remove-filtered MQ40 "
+			"--remove-filtered MQRankSum-12.5 "
+			"--remove-filtered ReadPosRankSum-8 "
+			"--vcf {output[0]};"
 		"vcfallelicprimitives -kg {output[0]} > {output[0]}"
 		
 rule gatk_call_unfiltered:
